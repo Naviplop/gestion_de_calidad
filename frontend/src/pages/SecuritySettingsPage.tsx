@@ -1,0 +1,449 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { authApiClientWithEvents } from '../lib/auth/auth-security';
+import { useToast } from '../components/Toast';
+
+type Tab = 'mfa' | 'password' | 'recovery';
+
+export function SecuritySettingsPage() {
+  const accessToken = useAuth((state) => state.accessToken);
+  const [tab, setTab] = useState<Tab>('mfa');
+
+  if (!accessToken) {
+    return null;
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Security Settings</h1>
+
+      <div className="mb-4 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setTab('mfa')}
+            className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
+              tab === 'mfa'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`}
+          >
+            MFA
+          </button>
+          <button
+            onClick={() => setTab('password')}
+            className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
+              tab === 'password'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`}
+          >
+            Password
+          </button>
+          <button
+            onClick={() => setTab('recovery')}
+            className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
+              tab === 'recovery'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`}
+          >
+            Recovery
+          </button>
+        </nav>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        {tab === 'mfa' && <MfaTab />}
+        {tab === 'password' && <PasswordTab />}
+        {tab === 'recovery' && <RecoveryTab />}
+      </div>
+    </div>
+  );
+}
+
+function MfaTab() {
+  const accessToken = useAuth((state) => state.accessToken);
+  const { showToast } = useToast();
+  const [status, setStatus] = useState<{ enabled: boolean; recoveryCodesCount: number } | null>(null);
+  const [provisioningUri, setProvisioningUri] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+
+  const loadStatus = useCallback(async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      const data = await authApiClientWithEvents.getMfaStatus();
+      setStatus(data);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const handleSetup = async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await authApiClientWithEvents.setupMfa();
+      setSecret(data.secret);
+      setProvisioningUri(data.provisioningUri);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to setup MFA';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySetup = async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await authApiClientWithEvents.verifyMfaSetup(mfaCode);
+      showToast('MFA enabled successfully', 'success');
+      setSecret(null);
+      setProvisioningUri(null);
+      setMfaCode('');
+      loadStatus();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid code';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisable = async () => {
+    if (!accessToken) return;
+    const currentPassword = prompt('Enter your current password to disable MFA:');
+    if (!currentPassword) return;
+    const mfaCode = prompt('Enter your current MFA code:');
+    setLoading(true);
+    setError(null);
+    try {
+      await authApiClientWithEvents.disableMfa(currentPassword, mfaCode || undefined);
+      showToast('MFA disabled', 'success');
+      loadStatus();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to disable MFA';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateRecoveryCodes = async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await authApiClientWithEvents.generateRecoveryCodes();
+      setRecoveryCodes(data.codes);
+      showToast('Recovery codes generated. Save them now.', 'success');
+      loadStatus();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate recovery codes';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {status && !status.enabled && !secret && (
+        <button
+          onClick={handleSetup}
+          disabled={loading}
+          className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+        >
+          Enable MFA
+        </button>
+      )}
+
+      {secret && (
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 text-sm text-gray-700">
+              Scan this QR code with your authenticator app, or enter the secret manually:
+            </p>
+            <div className="rounded-md bg-gray-50 p-3">
+              <code className="text-xs break-all">{secret}</code>
+            </div>
+            {provisioningUri && (
+              <div className="mt-2">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(provisioningUri)}`}
+                  alt="MFA QR Code"
+                  className="rounded-md border border-gray-200"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="mfaCode" className="block text-sm font-medium text-gray-700">
+              Enter verification code
+            </label>
+            <input
+              id="mfaCode"
+              type="text"
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+              placeholder="123456"
+            />
+          </div>
+
+          <button
+            onClick={handleVerifySetup}
+            disabled={loading}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            Verify and Enable
+          </button>
+        </div>
+      )}
+
+      {status?.enabled && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">MFA is enabled for your account.</p>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Recovery codes</h3>
+            <p className="text-sm text-gray-500">
+              You have {status.recoveryCodesCount} unused recovery code{status.recoveryCodesCount === 1 ? '' : 's'}.
+            </p>
+            <button
+              onClick={handleGenerateRecoveryCodes}
+              disabled={loading}
+              className="mt-2 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Regenerate recovery codes
+            </button>
+          </div>
+
+          {recoveryCodes && (
+            <div className="rounded-md bg-gray-50 p-3">
+              <p className="mb-2 text-xs font-medium text-gray-700">Save these codes. They will not be shown again.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {recoveryCodes.map((code) => (
+                  <code key={code} className="rounded bg-white px-2 py-1 text-xs">
+                    {code}
+                  </code>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handleDisable}
+            disabled={loading}
+            className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            Disable MFA
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PasswordTab() {
+  const accessToken = useAuth((state) => state.accessToken);
+  const { showToast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await authApiClientWithEvents.changePassword(currentPassword, newPassword);
+      showToast('Password changed successfully', 'success');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to change password';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div>
+        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+          Current password
+        </label>
+        <input
+          id="currentPassword"
+          type="password"
+          required
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+          New password
+        </label>
+        <input
+          id="newPassword"
+          type="password"
+          required
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+      >
+        {loading ? 'Saving...' : 'Change password'}
+      </button>
+    </form>
+  );
+}
+
+function RecoveryTab() {
+  const accessToken = useAuth((state) => state.accessToken);
+  const { showToast } = useToast();
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  const handleRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await authApiClientWithEvents.requestPasswordReset(email);
+      showToast('If the account exists, reset instructions will be sent.', 'success');
+      setSent(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to request password reset';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await authApiClientWithEvents.resetPassword(token, newPassword);
+      showToast('Password reset successfully', 'success');
+      setToken('');
+      setNewPassword('');
+      setSent(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reset password';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <form onSubmit={handleRequest} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {loading ? 'Sending...' : 'Request reset'}
+        </button>
+      </form>
+
+      {sent && (
+        <form onSubmit={handleReset} className="space-y-4">
+          <div>
+            <label htmlFor="token" className="block text-sm font-medium text-gray-700">
+              Reset token
+            </label>
+            <input
+              id="token"
+              type="text"
+              required
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              New password
+            </label>
+            <input
+              id="newPassword"
+              type="password"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {loading ? 'Resetting...' : 'Reset password'}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,15 @@
+- generic [ref=f3e4]:
+  - generic [ref=f3e5]:
+    - heading "QMS Platform" [level=1] [ref=f3e6]
+    - paragraph [ref=f3e7]: Sign in to your account
+  - generic [ref=f3e9]:
+    - generic [ref=f3e10]:
+      - generic [ref=f3e11]: Email
+      - textbox "Email" [ref=f3e12]:
+        - /placeholder: user@example.com
+    - generic [ref=f3e13]:
+      - generic [ref=f3e14]: Password
+      - textbox "Password" [ref=f3e15]:
+        - /placeholder: ••••••••••••
+    - button "Sign in" [ref=f3e16] [cursor=pointer]
+  - paragraph [ref=f3e17]: Quality Management System — Enterprise

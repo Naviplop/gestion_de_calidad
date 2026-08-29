@@ -1,0 +1,33 @@
+- generic [ref=f10e3]:
+  - banner [ref=f10e4]:
+    - generic [ref=f10e6]:
+      - generic [ref=f10e7]: QMS Platform
+      - navigation [ref=f10e9]:
+        - link "Dashboard" [ref=f10e10] [cursor=pointer]:
+          - /url: /
+        - link "Users" [ref=f10e11] [cursor=pointer]:
+          - /url: /users
+        - link "Departments" [ref=f10e12] [cursor=pointer]:
+          - /url: /departments
+        - link "Processes" [ref=f10e13] [cursor=pointer]:
+          - /url: /processes
+        - link "Standards" [ref=f10e14] [cursor=pointer]:
+          - /url: /standards
+        - link "Documents" [ref=f10e15] [cursor=pointer]:
+          - /url: /documents
+        - link "Audits" [ref=f10e16] [cursor=pointer]:
+          - /url: /audits
+        - link "Audit Programs" [ref=f10e17] [cursor=pointer]:
+          - /url: /audit-programs
+        - link "Nonconformities" [ref=f10e18] [cursor=pointer]:
+          - /url: /nonconformities
+        - link "Risks" [ref=f10e19] [cursor=pointer]:
+          - /url: /risks
+        - link "Organization" [ref=f10e20] [cursor=pointer]:
+          - /url: /organization
+  - main [ref=f10e21]:
+    - generic [ref=f10e22]:
+      - heading "Welcome to QMS Platform" [level=1] [ref=f10e23]
+      - paragraph [ref=f10e24]: Core domain modules are now available.
+  - contentinfo [ref=f10e25]:
+    - generic [ref=f10e26]: QMS Platform — Core Domain Phase

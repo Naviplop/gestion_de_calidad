@@ -1,0 +1,1445 @@
+// QMS Platform — Prisma Schema
+// Basado en: ARCHITECTURE.md, DATABASE.md, SECURITY.md
+// PostgreSQL 16+
+// Multi-tenant con RLS preparado
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  LOCKED
+}
+
+enum DocumentStatus {
+  DRAFT
+  IN_REVIEW
+  REJECTED
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  CURRENT
+  OBSOLETE
+  CANCELLED
+}
+
+enum DocumentClassification {
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum DocumentConfidentiality {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum DistributionStatus {
+  PENDING
+  ACKNOWLEDGED
+}
+
+enum ReviewStatus {
+  PENDING
+  COMPLETED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuditStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FindingType {
+  CONFORMITY
+  NON_CONFORMITY
+  OBSERVATION
+  OPPORTUNITY
+}
+
+enum NonconformityStatus {
+  OPEN
+  ANALYSIS
+  ACTION_PLANNED
+  IMPLEMENTATION
+  VERIFICATION
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CorrectiveActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  VERIFIED
+  CLOSED
+}
+
+enum RootCauseMethodology {
+  FIVE_WHY
+  ISHIKAWA
+  FREE_FORM
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  ASSESSED
+  TREATMENT_PLANNED
+  UNDER_CONTROL
+  CLOSED
+}
+
+enum TrainingStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
+  JUSTIFIED
+}
+
+enum IndicatorStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+}
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+}
+
+enum StorageProvider {
+  S3
+  MINIO
+  LOCAL
+}
+
+// ============================================================================
+// GLOBALES (sin organization_id)
+// ============================================================================
+
+model Standard {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  version     String?  @db.VarChar(20)
+  isActive    Boolean  @default(true) @db.Boolean
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  requirements      StandardRequirement[]
+  organizationLinks OrganizationStandard[]
+
+  @@map("standards")
+}
+
+model StandardRequirement {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  standardId          String   @db.Uuid
+  code                String   @db.VarChar(50)
+  title               String   @db.VarChar(300)
+  description         String?  @db.Text
+  clause              String?  @db.VarChar(50)
+  parentRequirementId String?  @db.Uuid
+  createdAt           DateTime @default(now()) @db.Timestamptz
+
+  standard            Standard                @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  parentRequirement   StandardRequirement?    @relation("RequirementHierarchy", fields: [parentRequirementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childRequirements   StandardRequirement[]   @relation("RequirementHierarchy")
+  processLinks        ProcessRequirementMap[]
+  auditChecklistItems AuditChecklistItem[]
+  findings            AuditFinding[]
+
+  @@unique([standardId, code])
+  @@map("standard_requirements")
+}
+
+model Permission {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  resource    String   @db.VarChar(100)
+  action      String   @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz
+
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+// ============================================================================
+// MULTI-TENANCY & AUTH
+// ============================================================================
+
+model Organization {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(200)
+  taxId        String?  @db.VarChar(50)
+  email        String?  @db.VarChar(200)
+  phone        String?  @db.VarChar(50)
+  address      String?  @db.Text
+  timezone     String   @default("UTC") @db.VarChar(50)
+  locale       String   @default("es") @db.VarChar(10)
+  logoUrl      String?  @db.Text
+  primaryColor String?  @db.VarChar(7)
+  isActive     Boolean  @default(true) @db.Boolean
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  settings                      OrganizationSetting[]
+  standards                     OrganizationStandard[]
+  departments                   Department[]
+  users                         User[]
+  roles                         Role[]
+  documents                     Document[]
+  documentVersions              DocumentVersion[]
+  documentReviewers             DocumentReviewer[]
+  documentApprovals             DocumentApproval[]
+  distributions                 DocumentDistribution[]
+  documentAcknowledgements      DocumentAcknowledgement[]
+  audits                        Audit[]
+  auditPrograms                 AuditProgram[]
+  auditChecklists               AuditChecklist[]
+  auditFindings                 AuditFinding[]
+  nonconformities               Nonconformity[]
+  rootCauseAnalyses             RootCauseAnalysis[]
+  correctiveActions             CorrectiveAction[]
+  correctiveActionVerifications CorrectiveActionVerification[]
+  risks                         Risk[]
+  riskAssessments               RiskAssessment[]
+  riskTreatments                RiskTreatment[]
+  fileAssets                    FileAsset[]
+  processes                     Process[]
+  areas                         Area[]
+  processRequirementMaps        ProcessRequirementMap[]
+  auditEvidences                AuditEvidence[]
+  actionEvidences               ActionEvidence[]
+  riskControls                  RiskControl[]
+  trainingEvidences             TrainingEvidence[]
+  trainingCourses               TrainingCourse[]
+  trainingSessions              TrainingSession[]
+  indicators                    Indicator[]
+  indicatorMeasurements         IndicatorMeasurement[]
+  notifications                 Notification[]
+  notificationPreferences       NotificationPreference[]
+  electronicSignatures          ElectronicSignatureEvent[]
+  auditLogs                     AuditLog[]
+  securityEvents                SecurityEvent[]
+  mfaSessions                   MfaSession[]
+
+  @@map("organizations")
+}
+
+model OrganizationSetting {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  key            String   @db.VarChar(100)
+  value          Json     @default("{}") @db.Json
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@map("organization_settings")
+}
+
+model OrganizationStandard {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  standardId     String    @db.Uuid
+  adoptedAt      DateTime? @db.Date
+  isActive       Boolean   @default(true) @db.Boolean
+  configuration  Json      @default("{}") @db.Json
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  standard     Standard     @relation(fields: [standardId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, standardId])
+  @@map("organization_standards")
+}
+
+model Department {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String   @db.Uuid
+  name               String   @db.VarChar(150)
+  description        String?  @db.Text
+  parentDepartmentId String?  @db.Uuid
+  isActive           Boolean  @default(true) @db.Boolean
+  createdAt          DateTime @default(now()) @db.Timestamptz
+  updatedAt          DateTime @updatedAt @db.Timestamptz
+
+  organization     Organization?          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentDepartment Department?            @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childDepartments Department[]           @relation("DepartmentHierarchy")
+  users            User[]
+  distributions    DocumentDistribution[]
+  documents        Document[]
+
+  @@unique([organizationId, name])
+  @@map("departments")
+}
+
+model User {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String    @db.Uuid
+  email               String    @db.VarChar(200)
+  passwordHash        String    @db.VarChar(255)
+  firstName           String    @db.VarChar(100)
+  lastName            String    @db.VarChar(100)
+  departmentId        String?   @db.Uuid
+  mfaEnabled          Boolean   @default(false) @db.Boolean
+  mfaSecret           String?   @db.VarChar(255)
+  mfaBackupCodes      Json?     @db.Json
+  lastLoginAt         DateTime? @db.Timestamptz
+  lastLoginIp         String?   @db.VarChar(45)
+  isActive            Boolean   @default(true) @db.Boolean
+  isLocked            Boolean   @default(false) @db.Boolean
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime? @db.Timestamptz
+  createdAt           DateTime  @default(now()) @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @db.Timestamptz
+  deletedAt           DateTime? @db.Timestamptz
+
+  organization               Organization                   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  department                 Department?                    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  roles                      UserRole[]
+  assignedUserRoles          UserRole[]                     @relation("UserRoleAssigner")
+  createdDocuments           Document[]                     @relation("DocumentCreator")
+  updatedDocuments           Document[]                     @relation("DocumentUpdater")
+  ownedDocuments             Document[]                     @relation("DocumentOwner")
+  responsibleDocuments       Document[]                     @relation("DocumentResponsible")
+  createdDocumentVersions    DocumentVersion[]              @relation("DocumentVersionCreator")
+  approvedDocumentVersions   DocumentVersion[]              @relation("DocumentVersionApprover")
+  documentReviewers          DocumentReviewer[]
+  documentApprovals          DocumentApproval[]
+  documentAcknowledgements   DocumentAcknowledgement[]
+  assignedDistributions      DocumentDistribution[]
+  leadAudits                 Audit[]                        @relation("AuditLead")
+  identifiedFindings         AuditFinding[]                 @relation("FindingIdentifier")
+  auditEvidence              AuditEvidence[]
+  responsibleNonconformities Nonconformity[]                @relation("NonconformityResponsible")
+  closedNonconformities      Nonconformity[]                @relation("NonconformityClosedBy")
+  correctiveActions          CorrectiveAction[]
+  rootCauseAnalyses          RootCauseAnalysis[]
+  actionEvidence             ActionEvidence[]
+  verifications              CorrectiveActionVerification[] @relation("VerificationPerformer")
+  risks                      Risk[]                         @relation("RiskOwner")
+  riskControls               RiskControl[]
+  treatments                 RiskTreatment[]                @relation("RiskTreatmentResponsible")
+  assessments                RiskAssessment[]
+  managedAreas               Area[]
+  ownedProcesses             Process[]
+  managedAuditPrograms       AuditProgram[]
+  responsibleIndicators      Indicator[]                    @relation("IndicatorResponsible")
+  uploadedFiles              FileAsset[]                    @relation("FileUploader")
+  refreshTokens              RefreshToken[]
+  mfaCredential              MfaCredential?
+  mfaRecoveryCodes           MfaRecoveryCode[]
+  instructedSessions         TrainingSession[]              @relation("TrainingInstructor")
+  trainingParticipants       TrainingParticipant[]
+  indicatorMeasurements      IndicatorMeasurement[]
+  notifications              Notification[]
+  notificationPreferences    NotificationPreference[]
+  electronicSignatures       ElectronicSignatureEvent[]
+  auditLogs                  AuditLog[]                     @relation("AuditActor")
+  securityEvents             SecurityEvent[]                @relation("SecurityActor")
+  mfaSessions                MfaSession[]
+
+  @@unique([organizationId, email])
+  @@map("users")
+}
+
+model Role {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  isSystem       Boolean  @default(false) @db.Boolean
+  isActive       Boolean  @default(true) @db.Boolean
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization  Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions   RolePermission[]
+  userRoles     UserRole[]
+  distributions DocumentDistribution[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roleId       String   @db.Uuid
+  permissionId String   @db.Uuid
+  createdAt    DateTime @default(now()) @db.Timestamptz
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  roleId     String    @db.Uuid
+  assignedBy String    @db.Uuid
+  assignedAt DateTime  @default(now()) @db.Timestamptz
+  expiresAt  DateTime? @db.Timestamptz
+
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedByUser User @relation("UserRoleAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+// ============================================================================
+// CREDENCIALES & SESIONES
+// ============================================================================
+
+model MfaCredential {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  secret     String    @db.VarChar(255)
+  isActive   Boolean   @default(true) @db.Boolean
+  enrolledAt DateTime? @db.Timestamptz
+  lastUsedAt DateTime? @db.Timestamptz
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("mfa_credentials")
+}
+
+model MfaRecoveryCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String    @db.VarChar(255)
+  usedAt    DateTime? @db.Timestamptz
+  createdAt DateTime  @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mfa_recovery_codes")
+}
+
+model RefreshToken {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String    @db.Uuid
+  organizationId String    @db.Uuid
+  tokenHash      String    @db.VarChar(255)
+  userAgent      String?   @db.Text
+  ipAddress      String?   @db.VarChar(45)
+  expiresAt      DateTime  @db.Timestamptz
+  revokedAt      DateTime? @db.Timestamptz
+  replacedBy     String?   @db.Uuid
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId, expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================================
+// ARCHIVOS CENTRALIZADOS
+// ============================================================================
+
+model FileAsset {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String          @db.Uuid
+  storageProvider  StorageProvider @default(S3)
+  bucketName       String          @db.VarChar(100)
+  objectKey        String          @db.VarChar(500)
+  originalFilename String          @db.VarChar(500)
+  mimeType         String          @db.VarChar(100)
+  fileSizeBytes    BigInt          @db.BigInt
+  sha256Hash       String          @db.VarChar(64)
+  metadata         Json?           @db.Json
+  uploadedById     String          @db.Uuid
+  createdAt        DateTime        @default(now()) @db.Timestamptz
+  updatedAt        DateTime        @updatedAt @db.Timestamptz
+  deletedAt        DateTime?       @db.Timestamptz
+
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy       User               @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  documentVersions DocumentVersion[]
+  auditEvidence    AuditEvidence[]
+  actionEvidence   ActionEvidence[]
+  trainingEvidence TrainingEvidence[]
+
+  @@unique([objectKey])
+  @@index([organizationId, createdAt])
+  @@map("file_assets")
+}
+
+// ============================================================================
+// DOCUMENTACIÓN QMS
+// ============================================================================
+
+model Document {
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String                  @db.Uuid
+  documentTypeId   String                  @db.Uuid
+  code             String                  @db.VarChar(100)
+  title            String                  @db.VarChar(300)
+  description      String?                 @db.Text
+  processId        String?                 @db.Uuid
+  departmentId     String?                 @db.Uuid
+  ownerId          String                  @db.Uuid
+  responsibleId    String                  @db.Uuid
+  classification   DocumentClassification  @default(INTERNAL)
+  confidentiality  DocumentConfidentiality @default(CONFIDENTIAL)
+  status           DocumentStatus          @default(DRAFT)
+  currentVersionId String?                 @unique @db.Uuid
+  issueDate        DateTime?               @db.Date
+  reviewDate       DateTime?               @db.Date
+  nextReviewDate   DateTime?               @db.Date
+  createdById      String                  @db.Uuid
+  updatedById      String                  @db.Uuid
+  createdAt        DateTime                @default(now()) @db.Timestamptz
+  updatedAt        DateTime                @updatedAt @db.Timestamptz
+  deletedAt        DateTime?               @db.Timestamptz
+
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documentType     DocumentType           @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  process          Process?               @relation(fields: [processId], references: [id], onDelete: SetNull)
+  department       Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  owner            User                   @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  responsible      User                   @relation("DocumentResponsible", fields: [responsibleId], references: [id], onDelete: Restrict)
+  createdBy        User                   @relation("DocumentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy        User                   @relation("DocumentUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+  currentVersion   DocumentVersion?       @relation("CurrentDocumentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  versions         DocumentVersion[]
+  distributions    DocumentDistribution[]
+  relatedTrainings TrainingCourse[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@index([organizationId, nextReviewDate])
+  @@map("documents")
+}
+
+model DocumentType {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @db.Boolean
+  createdAt   DateTime @default(now()) @db.Timestamptz
+
+  documents Document[]
+
+  @@map("document_types")
+}
+
+model DocumentVersion {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId     String         @db.Uuid
+  organizationId String         @db.Uuid
+  versionMajor   Int            @default(1)
+  versionMinor   Int            @default(0)
+  versionLabel   String         @db.VarChar(20)
+  fileAssetId    String         @db.Uuid
+  fileHash       String         @db.VarChar(64)
+  changeReason   String         @db.Text
+  status         DocumentStatus @default(DRAFT)
+  createdById    String         @db.Uuid
+  approvedById   String?        @db.Uuid
+  approvedAt     DateTime?      @db.Timestamptz
+  createdAt      DateTime       @default(now()) @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @db.Timestamptz
+
+  document       Document               @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  fileAsset      FileAsset              @relation(fields: [fileAssetId], references: [id], onDelete: Restrict)
+  createdBy      User                   @relation("DocumentVersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy     User?                  @relation("DocumentVersionApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+  reviewers      DocumentReviewer[]
+  approvals      DocumentApproval[]
+  distributions  DocumentDistribution[]
+  parentDocument Document?              @relation("CurrentDocumentVersion")
+
+  @@unique([documentId, versionMajor, versionMinor])
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+model DocumentReviewer {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentVersionId String       @db.Uuid
+  organizationId    String       @db.Uuid
+  userId            String       @db.Uuid
+  status            ReviewStatus @default(PENDING)
+  completedAt       DateTime?    @db.Timestamptz
+  comment           String?      @db.Text
+  createdAt         DateTime     @default(now()) @db.Timestamptz
+  updatedAt         DateTime     @updatedAt @db.Timestamptz
+
+  documentVersion DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([documentVersionId, userId])
+  @@map("document_reviewers")
+}
+
+model DocumentApproval {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentVersionId String         @db.Uuid
+  organizationId    String         @db.Uuid
+  userId            String         @db.Uuid
+  status            ApprovalStatus @default(PENDING)
+  comment           String?        @db.Text
+  decidedAt         DateTime?      @db.Timestamptz
+  createdAt         DateTime       @default(now()) @db.Timestamptz
+
+  documentVersion DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([documentVersionId, userId])
+  @@map("document_approvals")
+}
+
+model DocumentDistribution {
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId             String             @db.Uuid
+  documentVersionId      String             @db.Uuid
+  organizationId         String             @db.Uuid
+  assignedToUserId       String?            @db.Uuid
+  assignedToDepartmentId String?            @db.Uuid
+  assignedToRoleId       String?            @db.Uuid
+  status                 DistributionStatus @default(PENDING)
+  createdAt              DateTime           @default(now()) @db.Timestamptz
+
+  document             Document                  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentVersion      DocumentVersion           @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  organization         Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedToUser       User?                     @relation(fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedToDepartment Department?               @relation(fields: [assignedToDepartmentId], references: [id], onDelete: SetNull)
+  assignedToRole       Role?                     @relation(fields: [assignedToRoleId], references: [id], onDelete: SetNull)
+  acknowledgements     DocumentAcknowledgement[]
+
+  @@index([organizationId, documentId])
+  @@map("document_distribution")
+}
+
+model DocumentAcknowledgement {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentDistributionId String   @db.Uuid
+  organizationId         String   @db.Uuid
+  userId                 String   @db.Uuid
+  ipAddress              String?  @db.VarChar(45)
+  userAgent              String?  @db.Text
+  acknowledgedAt         DateTime @default(now()) @db.Timestamptz
+
+  documentDistribution DocumentDistribution @relation(fields: [documentDistributionId], references: [id], onDelete: Cascade)
+  organization         Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([documentDistributionId, userId])
+  @@map("document_acknowledgements")
+}
+
+// ============================================================================
+// MAPEO PROCESO-REQUISITO (para trazabilidad ISO)
+// ============================================================================
+
+model ProcessRequirementMap {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  processId      String   @db.Uuid
+  requirementId  String   @db.Uuid
+  organizationId String   @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  process      Process             @relation(fields: [processId], references: [id], onDelete: Cascade)
+  requirement  StandardRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([processId, requirementId])
+  @@map("process_requirement_map")
+}
+
+// ============================================================================
+// ESTRUCTURA ORGANIZACIONAL (procesos requeridos por auditorías y riesgos)
+// ============================================================================
+
+model Process {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  areaId          String?  @db.Uuid
+  parentProcessId String?  @db.Uuid
+  code            String   @db.VarChar(50)
+  name            String   @db.VarChar(255)
+  description     String?  @db.Text
+  ownerId         String?  @db.Uuid
+  processType     String?  @db.VarChar(50)
+  isActive        Boolean  @default(true) @db.Boolean
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  organization    Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  area            Area?                   @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  parentProcess   Process?                @relation("ProcessHierarchy", fields: [parentProcessId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childProcesses  Process[]               @relation("ProcessHierarchy")
+  owner           User?                   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  documents       Document[]
+  audits          Audit[]
+  nonconformities Nonconformity[]
+  risks           Risk[]
+  requirementMaps ProcessRequirementMap[]
+  indicators      Indicator[]
+  trainingCourses TrainingCourse[]
+
+  @@unique([organizationId, code])
+  @@map("processes")
+}
+
+model Area {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  parentAreaId   String?  @db.Uuid
+  name           String   @db.VarChar(150)
+  code           String?  @db.VarChar(50)
+  description    String?  @db.Text
+  managerId      String?  @db.Uuid
+  isActive       Boolean  @default(true) @db.Boolean
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentArea   Area?        @relation("AreaHierarchy", fields: [parentAreaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childAreas   Area[]       @relation("AreaHierarchy")
+  manager      User?        @relation(fields: [managerId], references: [id], onDelete: SetNull)
+  processes    Process[]
+
+  @@unique([organizationId, name])
+  @@map("areas")
+}
+
+// ============================================================================
+// EVIDENCIAS Y CONTROLES (modelos auxiliares referenciados por FileAsset/User)
+// ============================================================================
+
+model AuditEvidence {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  auditId        String   @db.Uuid
+  userId         String   @db.Uuid
+  fileAssetId    String   @db.Uuid
+  description    String?  @db.Text
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  audit        Audit        @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fileAsset    FileAsset    @relation(fields: [fileAssetId], references: [id], onDelete: Restrict)
+
+  @@map("audit_evidence")
+}
+
+model ActionEvidence {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String   @db.Uuid
+  correctiveActionId String   @db.Uuid
+  userId             String   @db.Uuid
+  fileAssetId        String   @db.Uuid
+  description        String?  @db.Text
+  createdAt          DateTime @default(now()) @db.Timestamptz
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  correctiveAction CorrectiveAction @relation(fields: [correctiveActionId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fileAsset        FileAsset        @relation(fields: [fileAssetId], references: [id], onDelete: Restrict)
+
+  @@map("action_evidence")
+}
+
+model RiskControl {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  riskId         String   @db.Uuid
+  userId         String   @db.Uuid
+  description    String   @db.Text
+  controlType    String   @db.VarChar(50)
+  effectiveness  String?  @db.VarChar(50)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  risk         Risk         @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("risk_controls")
+}
+
+model TrainingEvidence {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String   @db.Uuid
+  trainingSessionId String   @db.Uuid
+  fileAssetId       String   @db.Uuid
+  description       String?  @db.Text
+  createdAt         DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fileAsset    FileAsset    @relation(fields: [fileAssetId], references: [id], onDelete: Restrict)
+
+  @@map("training_evidence")
+}
+
+// ============================================================================
+// FASE 2: OPERACIÓN QMS Y AUDITORÍAS
+// ============================================================================
+
+// 18. AUDITS
+// ============================================================================
+
+model AuditProgram {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String   @db.VarChar(255)
+  description    String?  @db.Text
+  periodStart    DateTime @db.Date
+  periodEnd      DateTime @db.Date
+  responsibleId  String?  @db.Uuid
+  status         String   @default("PLANNED") @db.VarChar(30)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  responsible  User?        @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  audits       Audit[]
+
+  @@index([organizationId, status])
+  @@map("audit_programs")
+}
+
+model Audit {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  auditProgramId String?   @db.Uuid
+  processId      String?   @db.Uuid
+  leadAuditorId  String?   @db.Uuid
+  code           String    @db.VarChar(50)
+  title          String    @db.VarChar(255)
+  auditType      String?   @db.VarChar(50)
+  plannedStart   DateTime? @db.Timestamptz
+  plannedEnd     DateTime? @db.Timestamptz
+  actualStart    DateTime? @db.Timestamptz
+  actualEnd      DateTime? @db.Timestamptz
+  status         String    @default("PLANNED") @db.VarChar(30)
+  scope          String?   @db.Text
+  objective      String?   @db.Text
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  auditProgram    AuditProgram?    @relation(fields: [auditProgramId], references: [id], onDelete: SetNull)
+  process         Process?         @relation(fields: [processId], references: [id], onDelete: SetNull)
+  leadAuditor     User?            @relation("AuditLead", fields: [leadAuditorId], references: [id], onDelete: SetNull)
+  checklists      AuditChecklist[]
+  findings        AuditFinding[]
+  evidence        AuditEvidence[]
+  nonconformities Nonconformity[]  @relation("AuditNonconformities")
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("audits")
+}
+
+model AuditChecklist {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  auditId        String   @db.Uuid
+  name           String   @db.VarChar(255)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  audit        Audit                @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  items        AuditChecklistItem[]
+
+  @@map("audit_checklists")
+}
+
+model AuditChecklistItem {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  checklistId   String   @db.Uuid
+  requirementId String?  @db.Uuid
+  question      String   @db.Text
+  response      String?  @db.VarChar(50)
+  evidence      String?  @db.Text
+  comments      String?  @db.Text
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  checklist   AuditChecklist       @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  requirement StandardRequirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  findings    AuditFinding[]
+
+  @@map("audit_checklist_items")
+}
+
+model AuditFinding {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  auditId         String   @db.Uuid
+  checklistItemId String?  @db.Uuid
+  requirementId   String?  @db.Uuid
+  findingType     String   @db.VarChar(50)
+  title           String   @db.VarChar(255)
+  description     String   @db.Text
+  evidence        String?  @db.Text
+  severity        String?  @db.VarChar(30)
+  identifiedById  String   @db.Uuid
+  identifiedAt    DateTime @default(now()) @db.Timestamptz
+  status          String   @default("OPEN") @db.VarChar(30)
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  audit           Audit                @relation(fields: [auditId], references: [id], onDelete: Restrict)
+  checklistItem   AuditChecklistItem?  @relation(fields: [checklistItemId], references: [id], onDelete: SetNull)
+  requirement     StandardRequirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  identifiedBy    User                 @relation("FindingIdentifier", fields: [identifiedById], references: [id], onDelete: Restrict)
+  nonconformities Nonconformity[]
+
+  @@index([organizationId, status])
+  @@map("audit_findings")
+}
+
+// 19. NONCONFORMITIES
+// ============================================================================
+
+model Nonconformity {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  auditId        String?   @db.Uuid
+  findingId      String?   @db.Uuid
+  processId      String?   @db.Uuid
+  code           String    @db.VarChar(50)
+  title          String    @db.VarChar(255)
+  description    String    @db.Text
+  severity       String    @db.VarChar(30)
+  detectedAt     DateTime  @db.Timestamptz
+  responsibleId  String?   @db.Uuid
+  status         String    @default("OPEN") @db.VarChar(30)
+  closedAt       DateTime? @db.Timestamptz
+  closedById     String?   @db.Uuid
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  audit             Audit?             @relation("AuditNonconformities", fields: [auditId], references: [id], onDelete: SetNull)
+  finding           AuditFinding?      @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  process           Process?           @relation(fields: [processId], references: [id], onDelete: SetNull)
+  responsible       User?              @relation("NonconformityResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  closedBy          User?              @relation("NonconformityClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  rootCause         RootCauseAnalysis?
+  correctiveActions CorrectiveAction[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("nonconformities")
+}
+
+model RootCauseAnalysis {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  nonconformityId String   @unique @db.Uuid
+  methodology     String   @db.VarChar(50)
+  analysisData    Json     @default("{}") @db.Json
+  conclusion      String?  @db.Text
+  createdById     String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  nonconformity Nonconformity @relation(fields: [nonconformityId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@map("root_cause_analyses")
+}
+
+model CorrectiveAction {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String    @db.Uuid
+  nonconformityId       String    @db.Uuid
+  code                  String    @db.VarChar(50)
+  description           String    @db.Text
+  responsibleId         String    @db.Uuid
+  dueDate               DateTime? @db.Date
+  completedAt           DateTime? @db.Timestamptz
+  status                String    @default("OPEN") @db.VarChar(30)
+  effectivenessRequired Boolean   @default(true) @db.Boolean
+  createdAt             DateTime  @default(now()) @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @db.Timestamptz
+
+  organization  Organization                   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  nonconformity Nonconformity                  @relation(fields: [nonconformityId], references: [id], onDelete: Restrict)
+  responsible   User                           @relation(fields: [responsibleId], references: [id], onDelete: Restrict)
+  verifications CorrectiveActionVerification[]
+  evidence      ActionEvidence[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("corrective_actions")
+}
+
+model CorrectiveActionVerification {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String   @db.Uuid
+  correctiveActionId  String   @db.Uuid
+  verifierId          String   @db.Uuid
+  effectivenessStatus String   @db.VarChar(30)
+  evidence            String?  @db.Text
+  comments            String?  @db.Text
+  verifiedAt          DateTime @default(now()) @db.Timestamptz
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  correctiveAction CorrectiveAction @relation(fields: [correctiveActionId], references: [id], onDelete: Restrict)
+  verifier         User             @relation("VerificationPerformer", fields: [verifierId], references: [id], onDelete: Restrict)
+
+  @@map("corrective_action_verifications")
+}
+
+// 20. RISKS
+// ============================================================================
+
+model Risk {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  processId      String?  @db.Uuid
+  code           String   @db.VarChar(50)
+  title          String   @db.VarChar(255)
+  description    String   @db.Text
+  riskType       String   @db.VarChar(30)
+  ownerId        String?  @db.Uuid
+  status         String   @default("OPEN") @db.VarChar(30)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  process      Process?         @relation(fields: [processId], references: [id], onDelete: SetNull)
+  owner        User?            @relation("RiskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  assessments  RiskAssessment[]
+  treatments   RiskTreatment[]
+  controls     RiskControl[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("risks")
+}
+
+model RiskAssessment {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  riskId          String   @db.Uuid
+  probability     String   @db.VarChar(10)
+  impact          String   @db.VarChar(10)
+  score           String?  @db.VarChar(20)
+  calculationData Json     @default("{}") @db.Json
+  assessedById    String   @db.Uuid
+  assessedAt      DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  risk         Risk         @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  assessedBy   User         @relation(fields: [assessedById], references: [id], onDelete: Restrict)
+
+  @@map("risk_assessments")
+}
+
+model RiskTreatment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  riskId         String    @db.Uuid
+  strategy       String    @db.VarChar(50)
+  description    String    @db.Text
+  responsibleId  String?   @db.Uuid
+  dueDate        DateTime? @db.Date
+  status         String    @default("PLANNED") @db.VarChar(30)
+  completedAt    DateTime? @db.Timestamptz
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  risk         Risk         @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  responsible  User?        @relation("RiskTreatmentResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  @@map("risk_treatments")
+}
+
+// ============================================================================
+// FASE 3: INDICADORES, FIRMAS, AUDIT LOG Y DECISIONES
+// ============================================================================
+
+// 21. TRAINING
+// ============================================================================
+
+model TrainingCourse {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String   @db.Uuid
+  name              String   @db.VarChar(255)
+  description       String?  @db.Text
+  relatedDocumentId String?  @db.Uuid
+  processId         String?  @db.Uuid
+  isActive          Boolean  @default(true) @db.Boolean
+  createdAt         DateTime @default(now()) @db.Timestamptz
+
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  relatedDocument Document?         @relation(fields: [relatedDocumentId], references: [id], onDelete: SetNull)
+  process         Process?          @relation(fields: [processId], references: [id], onDelete: SetNull)
+  sessions        TrainingSession[]
+
+  @@map("training_courses")
+}
+
+model TrainingSession {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  courseId       String   @db.Uuid
+  instructorId   String?  @db.Uuid
+  scheduledAt    DateTime @db.Timestamptz
+  location       String?  @db.VarChar(255)
+  status         String   @default("PLANNED") @db.VarChar(30)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       TrainingCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor   User?                 @relation("TrainingInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  participants TrainingParticipant[]
+
+  @@map("training_sessions")
+}
+
+model TrainingParticipant {
+  sessionId        String    @db.Uuid
+  userId           String    @db.Uuid
+  attendanceStatus String?   @db.VarChar(30)
+  completedAt      DateTime? @db.Timestamptz
+  evaluationScore  String?   @db.VarChar(10)
+  createdAt        DateTime  @default(now()) @db.Timestamptz
+
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([sessionId, userId])
+  @@map("training_participants")
+}
+
+// 22. INDICATORS
+// ============================================================================
+
+model Indicator {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String   @db.Uuid
+  processId             String?  @db.Uuid
+  code                  String   @db.VarChar(50)
+  name                  String   @db.VarChar(255)
+  description           String?  @db.Text
+  unit                  String?  @db.VarChar(50)
+  targetValue           String?  @db.VarChar(20)
+  calculationDefinition Json     @default("{}") @db.Json
+  responsibleId         String?  @db.Uuid
+  isActive              Boolean  @default(true) @db.Boolean
+  createdAt             DateTime @default(now()) @db.Timestamptz
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  process      Process?               @relation(fields: [processId], references: [id], onDelete: SetNull)
+  responsible  User?                  @relation("IndicatorResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  measurements IndicatorMeasurement[]
+
+  @@unique([organizationId, code])
+  @@map("indicators")
+}
+
+model IndicatorMeasurement {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  indicatorId     String   @db.Uuid
+  measurementDate DateTime @db.Date
+  value           String   @db.VarChar(20)
+  targetValue     String?  @db.VarChar(20)
+  comments        String?  @db.Text
+  recordedById    String?  @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  indicator    Indicator    @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  recordedBy   User?        @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@map("indicator_measurements")
+}
+
+// 23. NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  userId         String    @db.Uuid
+  type           String    @db.VarChar(100)
+  title          String    @db.VarChar(255)
+  message        String    @db.Text
+  entityType     String?   @db.VarChar(100)
+  entityId       String?   @db.Uuid
+  readAt         DateTime? @db.Timestamptz
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String   @db.Uuid
+  userId           String   @db.Uuid
+  notificationType String   @db.VarChar(100)
+  inAppEnabled     Boolean  @default(true) @db.Boolean
+  emailEnabled     Boolean  @default(true) @db.Boolean
+  createdAt        DateTime @default(now()) @db.Timestamptz
+  updatedAt        DateTime @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationType])
+  @@map("notification_preferences")
+}
+
+// 24. ELECTRONIC SIGNATURE EVENTS
+// ============================================================================
+
+model ElectronicSignatureEvent {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String   @db.Uuid
+  userId            String   @db.Uuid
+  entityType        String   @db.VarChar(100)
+  entityId          String   @db.Uuid
+  action            String   @db.VarChar(100)
+  signedContentHash String   @db.VarChar(64)
+  signatureHash     String   @db.VarChar(64)
+  ipAddress         String?  @db.VarChar(45)
+  userAgent         String?  @db.Text
+  metadata          Json     @default("{}") @db.Json
+  signedAt          DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@map("electronic_signature_events")
+}
+
+// 25. AUDIT LOG
+// ============================================================================
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  actorId        String?  @db.Uuid
+  action         String   @db.VarChar(150)
+  entityType     String   @db.VarChar(150)
+  entityId       String?  @db.Uuid
+  payload        Json     @default("{}") @db.Json
+  ipAddress      String?  @db.VarChar(45)
+  userAgent      String?  @db.Text
+  correlationId  String   @db.VarChar(100)
+  previousHash   String?  @db.VarChar(64)
+  eventHash      String   @db.VarChar(64)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        User?        @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, entityType, entityId])
+  @@index([correlationId])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// SCHEMA DECISIONS
+// ============================================================================
+//
+// Las siguientes decisiones no pueden representarse directamente en Prisma
+// y deberán resolverse posteriormente mediante migraciones SQL:
+//
+// 1. CHECK CONSTRAINTS:
+//    - document_versions: version_major >= 1, version_minor >= 0
+//    - audit_programs: period_end >= period_start
+//    - indicator_measurements: measurement_date no futura (si aplica)
+//    - training_sessions: scheduled_at no pasada (si aplica)
+//    - risks: score dentro de rango válido según matriz configurada
+//
+// 2. ROW LEVEL SECURITY (RLS):
+//    - Políticas RLS por tenant para todas las tablas tenant-scoped.
+//    - Política append-only para audit_logs y electronic_signature_events.
+//    - Contexto por conexión: SET LOCAL app.current_organization_id.
+//
+// 3. AUDIT LOG IMMUTABILITY:
+//    - Permisos PostgreSQL que impidan UPDATE/DELETE desde rol runtime.
+//    - Triggers de validación de event_hash.
+//    - Restricted runtime role separado de migration role.
+//
+// 4. PARTIAL UNIQUE INDEXES:
+//    - users: único por (organization_id, email) donde deleted_at IS NULL.
+//    - documents: único por (organization_id, code) donde deleted_at IS NULL.
+//    - Estas restricciones requieren índices parciales en PostgreSQL.
+//
+// 5. EXTENDED UNIQUE CONSTRAINTS:
+//    - document_distribution: UNIQUE(document_version_id, assigned_to_user_id, assigned_to_department_id, assigned_to_role_id)
+//      para evitar distribuciones duplicadas al mismo destinatario.
+//    - Se recomienda implementar en migración SQL.
+//
+// 6. FOREIGN KEY NAMING:
+//    - Prisma genera nombres de FK automáticamente.
+//    - En migraciones posteriores se pueden renombrar para consistencia con DATABASE.md.
+//
+// 7. TRIGGERS:
+//    - Trigger para updated_at en tablas que no usan @updatedAt.
+//    - Trigger para calcular event_hash en audit_logs.
+//    - Trigger para validar transiciones de estado.
+//
+// 8. ENUMS vs STRING:
+//    - Se utilizan enums para estados cerrados y estables:
+//      DocumentStatus, ApprovalStatus, ReviewStatus, DistributionStatus,
+//      AuditStatus, NonconformityStatus, CorrectiveActionStatus,
+//      RiskStatus, TrainingStatus, AttendanceStatus, IndicatorStatus,
+//      NotificationChannel, NotificationStatus, AuditResult, StorageProvider.
+//    - Se mantienen como String estados abiertos o evolutivos:
+//      AuditProgram.status, Audit.auditType, AuditFinding.findingType,
+//      AuditFinding.severity, Nonconformity.severity, Risk.riskType,
+//      RootCauseAnalysis.methodology, RiskTreatment.strategy.
+//    - Esto permite evolucionar catálogos sin migraciones de enum.
+//
+// 9. COMPOSITE PRIMARY KEYS:
+//    - TrainingParticipant usa @@id([sessionId, userId]) para modelar
+//      la clave compuesta definida en DATABASE.md.
+//
+// 10. SOFT DELETE:
+//     - Solo User, Document y FileAsset incluyen deletedAt en Fase 1.
+//     - Otras entidades pueden requerir soft delete según evolución del negocio.
+//     - No se agrega deletedAt globalmente para evitar overhead innecesario.
+//
+// 11. AUDIT LOG PAYLOAD:
+//     - El campo payload almacena JSONB con old_values/new_values.
+//     - La estructura exacta del payload se define en capa de aplicación.
+//
+// ============================================================================
+
+model MfaSession {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  userId         String    @db.Uuid
+  sessionId      String    @db.VarChar(100)
+  verified       Boolean   @default(false)
+  expiresAt      DateTime  @db.Timestamptz
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId, verified, expiresAt])
+  @@map("mfa_sessions")
+}
+
+model SecurityEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  actorId        String?  @db.Uuid
+  eventType      String   @db.VarChar(100)
+  severity       String   @db.VarChar(20)
+  description    String   @db.Text
+  metadata       Json     @default("{}") @db.Json
+  ipAddress      String?  @db.VarChar(45)
+  userAgent      String?  @db.Text
+  correlationId  String   @db.VarChar(100)
+  previousHash   String?  @db.VarChar(64)
+  eventHash      String   @db.VarChar(64)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        User?        @relation("SecurityActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, eventType, severity])
+  @@index([correlationId])
+  @@map("security_events")
+}
+
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  key            String   @db.VarChar(100)
+  method         String   @db.VarChar(10)
+  path           String   @db.VarChar(500)
+  statusCode     Int?
+  responseBody   Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  expiresAt      DateTime @db.Timestamptz
+
+  @@unique([organizationId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
