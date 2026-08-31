@@ -36,6 +36,7 @@ export function DepartmentsPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadDepartments();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -43,11 +43,13 @@ export function AuditProgramsPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadPrograms();
   };
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadPrograms();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -80,6 +80,11 @@ export function AuditLogsPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    if (activeTab === 'audit-logs') {
+      loadAuditLogs();
+    } else {
+      loadSecurityEvents();
+    }
   };
 
   const renderMetadata = (metadata: Record<string, unknown> | null) => {

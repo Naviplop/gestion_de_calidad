@@ -198,6 +198,10 @@ export class RiskRepository {
     ownerId?: string | null;
     status?: string;
   }): Promise<Risk> {
+    await this.prisma.risk.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const risk = await this.prisma.risk.update({
       where: { id },
       data: {
@@ -221,10 +225,6 @@ export class RiskRepository {
         updatedAt: true,
       },
     });
-
-    if (risk.organizationId !== organizationId) {
-      throw new Error('RiskNotFound');
-    }
 
     return new Risk(
       risk.id,

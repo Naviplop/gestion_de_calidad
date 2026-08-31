@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { Audit, AuditListItem, AuditChecklist, AuditFinding } from '../lib/auth/auth.service';
 import { useToast } from '../components/Toast';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 type Tab = 'details' | 'checklists' | 'findings';
 
@@ -57,11 +58,13 @@ export function AuditsPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadAudits();
   };
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadAudits();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -480,50 +483,20 @@ export function AuditsPage() {
           resourceType="audit"
           onConfirm={handleConfirmedAction}
           onCancel={() => setPendingAction(null)}
+          messages={{
+            cancel: {
+              title: `Cancel audit?`,
+              message: `This will cancel "${selectedAudit?.code || 'this audit'}". This action may affect related workflows.`,
+              confirmText: 'Cancel',
+            },
+            obsolete: {
+              title: 'Mark as obsolete?',
+              message: `This will mark "${selectedAudit?.code || 'this audit'}" as obsolete. This action may affect active distributions.`,
+              confirmText: 'Obsolete',
+            },
+          }}
         />
       )}
-    </div>
-  );
-}
-
-function ConfirmModal({ action, resourceCode, resourceType, onConfirm, onCancel }: { action: string; resourceCode: string; resourceType: string; onConfirm: () => void; onCancel: () => void }) {
-  const messages: Record<string, { title: string; message: string; confirmText: string }> = {
-    cancel: {
-      title: `Cancel ${resourceType}?`,
-      message: `This will cancel "${resourceCode}". This action may affect related workflows.`,
-      confirmText: 'Cancel',
-    },
-    obsolete: {
-      title: `Mark as obsolete?`,
-      message: `This will mark "${resourceCode}" as obsolete. This action may affect active distributions.`,
-      confirmText: 'Obsolete',
-    },
-    reject: {
-      title: `Reject ${resourceType}?`,
-      message: `This will reject "${resourceCode}". The ${resourceType} will return to rejected status.`,
-      confirmText: 'Reject',
-    },
-  };
-
-  const config = messages[action] || { title: 'Confirm action', message: `Are you sure you want to ${action} "${resourceCode}"?`, confirmText: action };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">{config.title}</h3>
-        <p className="mt-2 text-sm text-gray-500">{config.message}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
-          >
-            {config.confirmText}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

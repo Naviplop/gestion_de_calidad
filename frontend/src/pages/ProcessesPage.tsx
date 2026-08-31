@@ -36,6 +36,7 @@ export function ProcessesPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadProcesses();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -126,6 +126,10 @@ export class RiskTreatmentRepository {
     status?: string;
     completedAt?: Date | null;
   }): Promise<RiskTreatment> {
+    await this.prisma.riskTreatment.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const treatment = await this.prisma.riskTreatment.update({
       where: { id },
       data: {
@@ -149,10 +153,6 @@ export class RiskTreatmentRepository {
         createdAt: true,
       },
     });
-
-    if (treatment.organizationId !== organizationId) {
-      throw new Error('RiskTreatmentNotFound');
-    }
 
     return new RiskTreatment(
       treatment.id,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Nonconformity, NonconformityListItem } from '../entities/nonconformity.entity';
 
@@ -252,6 +252,10 @@ export class NonconformityRepository {
     closedAt?: Date | null;
     closedById?: string | null;
   }): Promise<Nonconformity> {
+    await this.prisma.nonconformity.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const nonconformity = await this.prisma.nonconformity.update({
       where: { id },
       data: {
@@ -282,10 +286,6 @@ export class NonconformityRepository {
         updatedAt: true,
       },
     });
-
-    if (nonconformity.organizationId !== organizationId) {
-      throw new NotFoundException('NonconformityNotFound');
-    }
 
     return new Nonconformity(
       nonconformity.id,

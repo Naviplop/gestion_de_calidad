@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { Document, DocumentListItem, DocumentVersion, DocumentDistribution, FileAssetMetadata } from '../lib/auth/auth.service';
 import { useToast } from '../components/Toast';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 type Tab = 'details' | 'versions' | 'reviews' | 'approvals' | 'distributions' | 'acknowledgements';
 
@@ -70,11 +71,13 @@ export function DocumentsPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadDocuments();
   };
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadDocuments();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -667,9 +670,27 @@ export function DocumentsPage() {
       {pendingAction && (
         <ConfirmModal
           action={pendingAction.action}
-          documentCode={selectedDocument?.code || 'this document'}
+          resourceCode={selectedDocument?.code || 'this document'}
+          resourceType="document"
           onConfirm={handleConfirmedAction}
           onCancel={() => setPendingAction(null)}
+          messages={{
+            obsolete: {
+              title: 'Mark as obsolete?',
+              message: `This will mark "${selectedDocument?.code || 'this document'}" as obsolete. This action may affect active distributions.`,
+              confirmText: 'Obsolete',
+            },
+            cancel: {
+              title: 'Cancel document?',
+              message: `This will cancel "${selectedDocument?.code || 'this document'}". This action may affect review workflows.`,
+              confirmText: 'Cancel',
+            },
+            reject: {
+              title: 'Reject document?',
+              message: `This will reject "${selectedDocument?.code || 'this document'}". The document will return to rejected status.`,
+              confirmText: 'Reject',
+            },
+          }}
         />
       )}
 
@@ -712,48 +733,6 @@ export function DocumentsPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function ConfirmModal({ action, documentCode, onConfirm, onCancel }: { action: string; documentCode: string; onConfirm: () => void; onCancel: () => void }) {
-  const messages: Record<string, { title: string; message: string; confirmText: string }> = {
-    obsolete: {
-      title: 'Mark as obsolete?',
-      message: `This will mark "${documentCode}" as obsolete. This action may affect active distributions.`,
-      confirmText: 'Obsolete',
-    },
-    cancel: {
-      title: 'Cancel document?',
-      message: `This will cancel "${documentCode}". This action may affect review workflows.`,
-      confirmText: 'Cancel',
-    },
-    reject: {
-      title: 'Reject document?',
-      message: `This will reject "${documentCode}". The document will return to rejected status.`,
-      confirmText: 'Reject',
-    },
-  };
-
-  const config = messages[action] || { title: 'Confirm action', message: `Are you sure you want to ${action} "${documentCode}"?`, confirmText: action };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">{config.title}</h3>
-        <p className="mt-2 text-sm text-gray-500">{config.message}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
-          >
-            {config.confirmText}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

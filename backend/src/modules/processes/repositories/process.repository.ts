@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Process, ProcessListItem } from '../entities/process.entity';
 
@@ -199,6 +199,10 @@ export class ProcessRepository {
     processType?: string | null;
     isActive?: boolean;
   }): Promise<Process> {
+    await this.prisma.process.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const process = await this.prisma.process.update({
       where: { id },
       data: {
@@ -212,10 +216,6 @@ export class ProcessRepository {
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });
-
-    if (process.organizationId !== organizationId) {
-      throw new NotFoundException('ProcessNotFound');
-    }
 
     return new Process(
       process.id,
@@ -234,13 +234,13 @@ export class ProcessRepository {
   }
 
   async deactivate(id: string, organizationId: string): Promise<void> {
-    const process = await this.prisma.process.update({
+    await this.prisma.process.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
+    await this.prisma.process.update({
       where: { id },
       data: { isActive: false },
     });
-
-    if (process.organizationId !== organizationId) {
-      throw new NotFoundException('ProcessNotFound');
-    }
   }
 }

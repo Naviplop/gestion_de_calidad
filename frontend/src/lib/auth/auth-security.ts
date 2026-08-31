@@ -66,19 +66,6 @@ export class AuthApiClientWithSecurityEvents {
     }
   }
 
-  async getCurrentUser(): Promise<LoginResponse> {
-    try {
-      return await authApiClient.getCurrentUser();
-    } catch (error) {
-      if (error instanceof Error && error.message === 'UNAUTHORIZED') {
-        this.logSecurityEvent('AUTH_UNAUTHORIZED');
-      } else if (error instanceof Error && error.message === 'FORBIDDEN') {
-        this.logSecurityEvent('AUTH_FORBIDDEN');
-      }
-      throw error;
-    }
-  }
-
   async setupMfa(): Promise<MfaSetupResponse> {
     return authApiClient.setupMfa();
   }

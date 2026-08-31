@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Audit, AuditListItem } from '../entities/audit.entity';
 
@@ -242,6 +242,10 @@ export class AuditRepository {
     scope?: string | null;
     objective?: string | null;
   }): Promise<Audit> {
+    await this.prisma.audit.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const audit = await this.prisma.audit.update({
       where: { id },
       data: {
@@ -278,10 +282,6 @@ export class AuditRepository {
         updatedAt: true,
       },
     });
-
-    if (audit.organizationId !== organizationId) {
-      throw new NotFoundException('AuditNotFound');
-    }
 
     return new Audit(
       audit.id,

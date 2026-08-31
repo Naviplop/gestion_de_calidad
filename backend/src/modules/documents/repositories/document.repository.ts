@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Document, DocumentListItem } from '../entities/document.entity';
 import { DocumentClassification, DocumentConfidentiality, DocumentStatus } from '@prisma/client';
@@ -335,6 +335,10 @@ export class DocumentRepository {
     nextReviewDate?: Date | null;
     updatedById: string;
   }): Promise<Document> {
+    await this.prisma.document.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const document = await this.prisma.document.update({
       where: { id },
       data: {
@@ -372,10 +376,6 @@ export class DocumentRepository {
       },
     });
 
-    if (document.organizationId !== organizationId) {
-      throw new NotFoundException('DocumentNotFound');
-    }
-
     return new Document(
       document.id,
       document.organizationId,
@@ -400,6 +400,10 @@ export class DocumentRepository {
   }
 
   async updateStatus(id: string, organizationId: string, status: DocumentStatus, updatedById: string): Promise<Document> {
+    await this.prisma.document.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const document = await this.prisma.document.update({
       where: { id },
       data: {
@@ -429,10 +433,6 @@ export class DocumentRepository {
       },
     });
 
-    if (document.organizationId !== organizationId) {
-      throw new NotFoundException('DocumentNotFound');
-    }
-
     return new Document(
       document.id,
       document.organizationId,
@@ -457,6 +457,10 @@ export class DocumentRepository {
   }
 
   async setCurrentVersion(documentId: string, organizationId: string, versionId: string): Promise<Document> {
+    await this.prisma.document.findFirstOrThrow({
+      where: { id: documentId, organizationId },
+    });
+
     const document = await this.prisma.document.update({
       where: { id: documentId },
       data: {
@@ -484,10 +488,6 @@ export class DocumentRepository {
         updatedAt: true,
       },
     });
-
-    if (document.organizationId !== organizationId) {
-      throw new NotFoundException('DocumentNotFound');
-    }
 
     return new Document(
       document.id,

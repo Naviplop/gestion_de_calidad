@@ -44,6 +44,7 @@ export function UsersPage() {
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
+    loadUsers();
   };
 
   return (

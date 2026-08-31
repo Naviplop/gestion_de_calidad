@@ -4,4 +4,6 @@ coverage/
 .env
 .env.local
 .env.*.local
+storage/
+.playwright-mcp/
 *.log

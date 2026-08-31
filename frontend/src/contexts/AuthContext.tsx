@@ -9,7 +9,6 @@ interface AuthContextValue extends AuthState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
-  refreshSession: () => Promise<void>;
   mfaSessionId: string | null;
   setMfaSessionId: (sessionId: string | null) => void;
 }
@@ -112,35 +111,6 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
     setError(null);
   }, []);
 
-  const refreshSession = useCallback(async () => {
-    const currentToken = accessToken;
-    if (!currentToken) {
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await authApiClientWithEvents.refresh();
-      const newAccessToken = response.accessToken;
-      authApiClientWithEvents.setAccessToken(newAccessToken);
-      setAccessToken(newAccessToken);
-
-      const currentUser = user;
-      if (currentUser) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-      }
-    } catch {
-      authApiClientWithEvents.setAccessToken(null);
-      setUser(null);
-      setAccessToken(null);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    }
-  }, [accessToken, user]);
-
   const value = useMemo(() => ({
     user,
     accessToken,
@@ -153,10 +123,9 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
     setLoading,
     setError: setErrorState,
     clearError,
-    refreshSession,
     mfaSessionId,
     setMfaSessionId,
-  }), [user, accessToken, isAuthenticated, isLoading, error, login, completeMfaLogin, logout, setLoading, setErrorState, clearError, refreshSession, mfaSessionId]);
+  }), [user, accessToken, isAuthenticated, isLoading, error, login, completeMfaLogin, logout, setLoading, setErrorState, clearError, mfaSessionId]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

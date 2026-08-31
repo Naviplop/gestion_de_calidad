@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { CorrectiveAction, CorrectiveActionListItem } from '../entities/nonconformity.entity';
 
@@ -168,6 +168,10 @@ export class CorrectiveActionRepository {
     completedAt?: Date | null;
     effectivenessRequired?: boolean;
   }): Promise<CorrectiveAction> {
+    await this.prisma.correctiveAction.findFirstOrThrow({
+      where: { id, organizationId },
+    });
+
     const action = await this.prisma.correctiveAction.update({
       where: { id },
       data: {
@@ -193,10 +197,6 @@ export class CorrectiveActionRepository {
         updatedAt: true,
       },
     });
-
-    if (action.organizationId !== organizationId) {
-      throw new NotFoundException('CorrectiveActionNotFound');
-    }
 
     return new CorrectiveAction(
       action.id,

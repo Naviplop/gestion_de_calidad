@@ -515,10 +515,6 @@ export class AuthApiClient {
     });
   }
 
-  async getCurrentUser(): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/me');
-  }
-
   async listUsers(params: {
     page?: number;
     pageSize?: number;
