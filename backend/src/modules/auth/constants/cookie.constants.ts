@@ -11,10 +11,11 @@ export interface AuthCookieOptions {
 }
 
 export function buildAuthCookieOptions(options: AuthCookieOptions = {}): Required<AuthCookieOptions> {
+  const isProduction = process.env.NODE_ENV === 'production';
   return {
     httpOnly: options.httpOnly ?? true,
-    secure: options.secure ?? true,
-    sameSite: options.sameSite ?? 'strict',
+    secure: options.secure ?? isProduction,
+    sameSite: options.sameSite ?? (isProduction ? 'strict' : 'lax'),
     path: options.path ?? AUTH_COOKIE_PATH,
     maxAge: options.maxAge ?? AUTH_COOKIE_MAX_AGE,
   };

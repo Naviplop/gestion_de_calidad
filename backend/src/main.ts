@@ -12,6 +12,7 @@ import { AppLoggerService } from './common/logger/logger.service';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
+import * as cookieParser from 'cookie-parser';
 
 process.on('unhandledRejection', (reason) => {
   const message = reason instanceof Error ? reason.message : String(reason);
@@ -69,6 +70,7 @@ async function bootstrap() {
     app.useGlobalFilters(new AllExceptionsFilter());
     app.use(new HttpLoggingMiddleware().use);
     app.use(errorHandlerMiddleware);
+    app.use(cookieParser());
     app.use(new CsrfMiddleware().use);
     app.useGlobalInterceptors(new ResponseEnvelopeInterceptor(), new RequestIdInterceptor(), new CorrelationIdInterceptor());
     app.setGlobalPrefix('api/v1');
