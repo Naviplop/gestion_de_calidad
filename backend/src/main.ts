@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -9,6 +10,8 @@ import { ResponseEnvelopeInterceptor } from './common/interceptors/response-enve
 import { validateEnv } from './common/config/env';
 import { AppLoggerService } from './common/logger/logger.service';
 import helmet from 'helmet';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 
 validateEnv();
 
@@ -20,10 +23,10 @@ async function bootstrap() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:'],
-        connectSrc: ["'self'", 'http://localhost:5173'],
+        connectSrc: ["'self'", process.env.CORS_ORIGIN || 'http://localhost:5173'].filter(Boolean),
         fontSrc: ["'self'", 'data:'],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
@@ -44,10 +47,30 @@ async function bootstrap() {
     maxAge: 86400,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.use(new HttpLoggingMiddleware().use);
   app.use(errorHandlerMiddleware);
+  app.use(new CsrfMiddleware().use);
   app.useGlobalInterceptors(new ResponseEnvelopeInterceptor(), new RequestIdInterceptor(), new CorrelationIdInterceptor());
   app.setGlobalPrefix('api/v1');
+  process.on('unhandledRejection', (reason) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    if (typeof logger !== 'undefined') {
+      logger.error(`Unhandled Rejection: ${message}`);
+    } else {
+      console.error(`Unhandled Rejection: ${message}`);
+    }
+    process.exit(1);
+  });
+  process.on('uncaughtException', (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (typeof logger !== 'undefined') {
+      logger.error(`Uncaught Exception: ${message}`);
+    } else {
+      console.error(`Uncaught Exception: ${message}`);
+    }
+    process.exit(1);
+  });
   const port = parseInt(process.env.PORT || '3001', 10);
   await app.listen(port);
   logger.log(`Application is running on: ${await app.getUrl()}`, 'Bootstrap');
