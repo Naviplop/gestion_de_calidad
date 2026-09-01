@@ -1,6 +1,6 @@
 export const AUTH_COOKIE_NAME = 'refreshToken';
 export const AUTH_COOKIE_PATH = '/api/v1/auth';
-export const AUTH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+export const AUTH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 export interface AuthCookieOptions {
   httpOnly?: boolean;

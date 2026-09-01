@@ -68,42 +68,33 @@ export class RefreshTokenService {
       return null;
     }
 
-    const newRawToken = this.generateSecureToken();
-    const newTokenHash = this.hashToken(newRawToken);
-    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      await tx.refreshToken.update({
-        where: { id: existingToken.id },
-        data: { revokedAt: new Date() },
-      });
-
-      const newToken = await tx.refreshToken.create({
-        data: {
-          userId: existingToken.userId,
-          organizationId: existingToken.organizationId,
-          tokenHash: newTokenHash,
-          userAgent: existingToken.userAgent,
-          ipAddress: existingToken.ipAddress,
-          expiresAt: newExpiresAt,
-        },
-      });
-
-      return newToken;
-    });
-
-    this.logger.log('Refresh token rotated', {
-      userId: existingToken.userId,
-      oldTokenId: existingToken.id,
-      newTokenId: result.id,
-    });
-
     return {
-      tokenHash: newTokenHash,
+      tokenHash: existingToken.tokenHash,
       userId: existingToken.userId,
       organizationId: existingToken.organizationId,
-      expiresAt: newExpiresAt,
-      rawToken: newRawToken,
+      expiresAt: existingToken.expiresAt,
+      rawToken,
+    };
+  }
+
+  async validateRefreshToken(rawToken: string): Promise<RefreshTokenInfo | null> {
+    const tokenHash = this.hashToken(rawToken);
+
+    const existingToken = await this.prisma.refreshToken.findFirst({
+      where: { tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
+    });
+
+    if (!existingToken) {
+      this.logger.warn('Invalid refresh token attempt', { tokenHash });
+      return null;
+    }
+
+    return {
+      tokenHash: existingToken.tokenHash,
+      userId: existingToken.userId,
+      organizationId: existingToken.organizationId,
+      expiresAt: existingToken.expiresAt,
+      rawToken,
     };
   }
 

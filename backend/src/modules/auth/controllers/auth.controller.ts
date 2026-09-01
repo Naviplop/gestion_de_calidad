@@ -166,7 +166,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard)
   async me(@Req() req: AuthRequest) {
     const userId = req.user?.sub;
     const organizationId = req.organizationId;

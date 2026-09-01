@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
       const token = authorizationHeader.substring(7);
       accessTokenPayload = await this.jwtTokenService.validateAccessToken(token);
     } else if (refreshToken) {
-      const tokenInfo = await this.refreshTokenService.validateAndRotateRefreshToken(refreshToken);
+      const tokenInfo = await this.refreshTokenService.validateRefreshToken(refreshToken);
       if (tokenInfo) {
         accessTokenPayload = {
           sub: tokenInfo.userId,
