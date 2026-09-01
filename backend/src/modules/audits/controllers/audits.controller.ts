@@ -10,6 +10,7 @@ import { CreateAuditProgramDto, UpdateAuditProgramDto } from '../dto/create-audi
 import { CreateAuditDto, UpdateAuditDto } from '../dto/create-audit.dto';
 import { CreateAuditChecklistDto, CreateAuditChecklistItemDto, UpdateAuditChecklistItemDto } from '../dto/audit-checklist.dto';
 import { CreateAuditFindingDto, UpdateAuditFindingDto } from '../dto/audit-finding.dto';
+import { AuditStatus } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {
   organizationId: string;
@@ -85,7 +86,7 @@ export class AuditsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: AuditStatus,
     @Query('auditProgramId') auditProgramId?: string,
     @Query('processId') processId?: string,
     @Query('leadAuditorId') leadAuditorId?: string,

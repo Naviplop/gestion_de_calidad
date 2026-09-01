@@ -1,4 +1,4 @@
-import { IsString, MaxLength, IsOptional, IsUUID, IsDate, IsIn } from 'class-validator';
+import { IsString, MaxLength, IsOptional, IsUUID, IsDate } from 'class-validator';
 
 export class CreateAuditDto {
   @IsOptional()
@@ -83,10 +83,6 @@ export class UpdateAuditDto {
   @IsOptional()
   @IsDate()
   actualEnd?: Date;
-
-  @IsOptional()
-  @IsIn(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
-  status?: string;
 
   @IsOptional()
   @IsString()

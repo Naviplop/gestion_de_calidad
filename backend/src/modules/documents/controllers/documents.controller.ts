@@ -84,14 +84,23 @@ export class DocumentsController {
     return this.documentsService.updateDocument(req.organizationId, id, req.userId, dto, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
-  @Post(':id/submit')
-  @RequirePermission('documents:submit')
-  @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
-  submit(@Param('id') id: string, @Body() body: { changeReason?: string }, @Req() req: AuthenticatedRequest) {
-    const ctx = getRequestContext(req);
-    const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.submitDocument(req.organizationId, id, req.userId, body.changeReason, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
-  }
+   @Post(':id/submit')
+   @RequirePermission('documents:submit')
+   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+   submit(@Param('id') id: string, @Body() body: { changeReason?: string }, @Req() req: AuthenticatedRequest) {
+     const ctx = getRequestContext(req);
+     const ifMatch = req.headers['if-match'] as string | undefined;
+     return this.documentsService.submitDocument(req.organizationId, id, req.userId, body.changeReason, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+   }
+
+   @Post(':id/submit-for-approval')
+   @RequirePermission('documents:approve')
+   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+   submitForApproval(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+     const ctx = getRequestContext(req);
+     const ifMatch = req.headers['if-match'] as string | undefined;
+     return this.documentsService.submitForApprovalDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+   }
 
   @Post(':id/approve')
   @RequirePermission('documents:approve')

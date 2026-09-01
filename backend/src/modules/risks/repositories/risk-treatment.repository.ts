@@ -20,6 +20,7 @@ export class RiskTreatmentRepository {
         status: true,
         completedAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -38,6 +39,7 @@ export class RiskTreatmentRepository {
       treatment.status,
       treatment.completedAt,
       treatment.createdAt,
+      treatment.updatedAt,
     );
   }
 
@@ -55,6 +57,7 @@ export class RiskTreatmentRepository {
         status: true,
         completedAt: true,
         createdAt: true,
+        updatedAt: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -70,6 +73,7 @@ export class RiskTreatmentRepository {
       t.status,
       t.completedAt,
       t.createdAt,
+      t.updatedAt,
     ));
   }
 
@@ -101,6 +105,7 @@ export class RiskTreatmentRepository {
         status: true,
         completedAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -115,6 +120,7 @@ export class RiskTreatmentRepository {
       treatment.status,
       treatment.completedAt,
       treatment.createdAt,
+      treatment.updatedAt,
     );
   }
 
@@ -151,6 +157,7 @@ export class RiskTreatmentRepository {
         status: true,
         completedAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -165,6 +172,7 @@ export class RiskTreatmentRepository {
       treatment.status,
       treatment.completedAt,
       treatment.createdAt,
+      treatment.updatedAt,
     );
   }
 }

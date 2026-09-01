@@ -1,0 +1,51 @@
+[
+  {
+    "description": "Apply status enums to Audit, Nonconformity, CorrectiveAction, and Risk models",
+    "id": "20260831230000_apply_status_enums",
+    "steps": [
+      {
+        "description": "Alter audits table to use AuditStatus enum",
+        "id": "20260831230000_apply_status_enums_1",
+        "steps": [],
+        "sql": [
+          "ALTER TABLE \"audits\" DROP COLUMN \"status\", ADD COLUMN \"status\" \"AuditStatus\" NOT NULL DEFAULT 'PLANNED';"
+        ]
+      },
+      {
+        "description": "Alter corrective_actions table to use CorrectiveActionStatus enum",
+        "id": "20260831230000_apply_status_enums_2",
+        "steps": [],
+        "sql": [
+          "ALTER TABLE \"corrective_actions\" DROP COLUMN \"status\", ADD COLUMN \"status\" \"CorrectiveActionStatus\" NOT NULL DEFAULT 'PENDING';"
+        ]
+      },
+      {
+        "description": "Alter nonconformities table to use NonconformityStatus enum",
+        "id": "20260831230000_apply_status_enums_3",
+        "steps": [],
+        "sql": [
+          "ALTER TABLE \"nonconformities\" DROP COLUMN \"status\", ADD COLUMN \"status\" \"NonconformityStatus\" NOT NULL DEFAULT 'OPEN';"
+        ]
+      },
+      {
+        "description": "Alter risks table to use RiskStatus enum",
+        "id": "20260831230000_apply_status_enums_4",
+        "steps": [],
+        "sql": [
+          "ALTER TABLE \"risks\" DROP COLUMN \"status\", ADD COLUMN \"status\" \"RiskStatus\" NOT NULL DEFAULT 'IDENTIFIED';"
+        ]
+      },
+      {
+        "description": "Create composite indexes for tenant-scoped status queries",
+        "id": "20260831230000_apply_status_enums_5",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"audits_organizationId_status_idx\" ON \"audits\"(\"organizationId\", \"status\");",
+          "CREATE INDEX \"corrective_actions_organizationId_status_idx\" ON \"corrective_actions\"(\"organizationId\", \"status\");",
+          "CREATE INDEX \"nonconformities_organizationId_status_idx\" ON \"nonconformities\"(\"organizationId\", \"status\");",
+          "CREATE INDEX \"risks_organizationId_status_idx\" ON \"risks\"(\"organizationId\", \"status\");"
+        ]
+      }
+    ]
+  }
+]

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-28
 **Scope:** READ-ONLY audit of QMS Platform implementation against all project contracts (.md docs) and regression check against FASE C.10.4 baseline.
-**Auditor:** Kilo (automated contract audit)
+**Auditor:** LAFM (automated contract audit)
 
 ---
 

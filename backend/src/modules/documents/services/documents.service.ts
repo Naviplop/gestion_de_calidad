@@ -196,10 +196,36 @@ export class DocumentsService {
 
     await this.documentRepository.updateStatus(id, organizationId, DocumentStatus.IN_REVIEW, userId);
 
-    await this.recordAuditEvent({
+     await this.recordAuditEvent({
       organizationId,
       actorId: userId,
       action: 'DOCUMENT_SUBMITTED',
+      entityType: 'Document',
+      entityId: document.id,
+      ipAddress: ipAddress ?? null,
+      userAgent: userAgent ?? null,
+      correlationId,
+    });
+  }
+
+  async submitForApprovalDocument(organizationId: string, id: string, userId: string, ifMatch?: string, ipAddress?: string | null, userAgent?: string | null, correlationId?: string): Promise<void> {
+    const document = await this.documentRepository.findById(id, organizationId);
+    if (!document) {
+      throw new NotFoundException('DocumentNotFound');
+    }
+
+    this.concurrencyService.validateIfMatch(document, ifMatch);
+
+    if (document.status !== DocumentStatus.IN_REVIEW) {
+      throw new BadRequestException('InvalidStatusTransition');
+    }
+
+    await this.documentRepository.updateStatus(id, organizationId, DocumentStatus.PENDING_APPROVAL, userId);
+
+    await this.recordAuditEvent({
+      organizationId,
+      actorId: userId,
+      action: 'DOCUMENT_SUBMITTED_FOR_APPROVAL',
       entityType: 'Document',
       entityId: document.id,
       ipAddress: ipAddress ?? null,
@@ -499,116 +525,70 @@ export class DocumentsService {
 
     const distributions: DocumentDistribution[] = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.prisma.$transaction(async (tx: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await this.prisma.$transaction(async (tx) => {
       if (data.assignedToUserIds && data.assignedToUserIds.length > 0) {
-        for (const userId of data.assignedToUserIds) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const distribution = await tx.documentDistribution.create({
-            data: {
-              organizationId,
-              documentId,
-              documentVersionId: data.documentVersionId,
-              assignedToUserId: userId,
-              status: 'PENDING',
-            },
-            select: {
-              id: true,
-              documentId: true,
-              documentVersionId: true,
-              organizationId: true,
-              assignedToUserId: true,
-              assignedToDepartmentId: true,
-              assignedToRoleId: true,
-              status: true,
-              createdAt: true,
-            },
-          });
-          distributions.push(new DocumentDistribution(
-            distribution.id,
-            distribution.documentId,
-            distribution.documentVersionId,
-            distribution.organizationId,
-            distribution.assignedToUserId,
-            distribution.assignedToDepartmentId,
-            distribution.assignedToRoleId,
-            distribution.status,
-            distribution.createdAt,
-          ));
-        }
+        await tx.documentDistribution.createMany({
+          data: data.assignedToUserIds.map((userId) => ({
+            organizationId,
+            documentId,
+            documentVersionId: data.documentVersionId,
+            assignedToUserId: userId,
+            status: 'PENDING',
+          })),
+        });
       }
 
       if (data.assignedToDepartmentIds && data.assignedToDepartmentIds.length > 0) {
-        for (const departmentId of data.assignedToDepartmentIds) {
-          const distribution = await tx.documentDistribution.create({
-            data: {
-              organizationId,
-              documentId,
-              documentVersionId: data.documentVersionId,
-              assignedToDepartmentId: departmentId,
-              status: 'PENDING',
-            },
-            select: {
-              id: true,
-              documentId: true,
-              documentVersionId: true,
-              organizationId: true,
-              assignedToUserId: true,
-              assignedToDepartmentId: true,
-              assignedToRoleId: true,
-              status: true,
-              createdAt: true,
-            },
-          });
-          distributions.push(new DocumentDistribution(
-            distribution.id,
-            distribution.documentId,
-            distribution.documentVersionId,
-            distribution.organizationId,
-            distribution.assignedToUserId,
-            distribution.assignedToDepartmentId,
-            distribution.assignedToRoleId,
-            distribution.status,
-            distribution.createdAt,
-          ));
-        }
+        await tx.documentDistribution.createMany({
+          data: data.assignedToDepartmentIds.map((departmentId) => ({
+            organizationId,
+            documentId,
+            documentVersionId: data.documentVersionId,
+            assignedToDepartmentId: departmentId,
+            status: 'PENDING',
+          })),
+        });
       }
 
       if (data.assignedToRoleIds && data.assignedToRoleIds.length > 0) {
-        for (const roleId of data.assignedToRoleIds) {
-          const distribution = await tx.documentDistribution.create({
-            data: {
-              organizationId,
-              documentId,
-              documentVersionId: data.documentVersionId,
-              assignedToRoleId: roleId,
-              status: 'PENDING',
-            },
-            select: {
-              id: true,
-              documentId: true,
-              documentVersionId: true,
-              organizationId: true,
-              assignedToUserId: true,
-              assignedToDepartmentId: true,
-              assignedToRoleId: true,
-              status: true,
-              createdAt: true,
-            },
-          });
-          distributions.push(new DocumentDistribution(
-            distribution.id,
-            distribution.documentId,
-            distribution.documentVersionId,
-            distribution.organizationId,
-            distribution.assignedToUserId,
-            distribution.assignedToDepartmentId,
-            distribution.assignedToRoleId,
-            distribution.status,
-            distribution.createdAt,
-          ));
-        }
+        await tx.documentDistribution.createMany({
+          data: data.assignedToRoleIds.map((roleId) => ({
+            organizationId,
+            documentId,
+            documentVersionId: data.documentVersionId,
+            assignedToRoleId: roleId,
+            status: 'PENDING',
+          })),
+        });
+      }
+
+      const created = await tx.documentDistribution.findMany({
+        where: { documentId, documentVersionId: data.documentVersionId, organizationId },
+        select: {
+          id: true,
+          documentId: true,
+          documentVersionId: true,
+          organizationId: true,
+          assignedToUserId: true,
+          assignedToDepartmentId: true,
+          assignedToRoleId: true,
+          status: true,
+          createdAt: true,
+        },
+      });
+
+      for (const d of created) {
+        distributions.push(new DocumentDistribution(
+          d.id,
+          d.documentId,
+          d.documentVersionId,
+          d.organizationId,
+          d.assignedToUserId,
+          d.assignedToDepartmentId,
+          d.assignedToRoleId,
+          d.status,
+          d.createdAt,
+        ));
       }
     });
 

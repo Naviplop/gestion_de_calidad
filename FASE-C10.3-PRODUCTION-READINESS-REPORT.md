@@ -2,7 +2,7 @@
 ## QMS Platform | ISO 9001 / ISO 27001 Compliance Audit
 
 **Fecha de emisión:** 2026-08-28
-**Auditor:** Kilo (Automated Audit Engine)
+**Auditor:** LAFM (Automated Audit Engine)
 **Alcance:** Backend (NestJS), Frontend (React/Vite/Tailwind), Prisma ORM, PostgreSQL
 **Duración:** FASE 1-12 (Gap analysis, corrections, quality gate)
 

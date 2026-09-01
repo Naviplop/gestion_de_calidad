@@ -2,7 +2,7 @@
 
 **Proyecto:** QMS ISO Management  
 **Fecha:** 2026-08-28  
-**Auditor:** Kilo  
+**Auditor:** LAFM  
 **Estado Final:** GO  
 **Próxima Fase:** C.10.2
 

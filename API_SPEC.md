@@ -1909,7 +1909,33 @@ Envía documento a revisión.
 
 ---
 
-### 13.6 POST /documents/:id/approve
+### 13.6 POST /documents/:id/submit-for-approval
+Envía documento de revisión (IN_REVIEW) a aprobación (PENDING_APPROVAL).
+
+**Auth:** required  
+**Permission:** `documents:approve`  
+**Tenant scope:** sí  
+**Audit:** sí
+
+**Request:**
+```json
+{}
+```
+
+**Response:** `204 No Content`
+
+**Validaciones:**
+- Status debe ser `IN_REVIEW`.
+- Requiere `If-Match` para concurrencia.
+
+**Errores:**
+- `404 DocumentNotFound`
+- `409 ConcurrentUpdate`
+- `422 InvalidStatusTransition`
+
+---
+
+### 13.7 POST /documents/:id/approve
 Aprueba un documento.
 
 **Auth:** required  
@@ -1932,7 +1958,7 @@ Aprueba un documento.
 
 ---
 
-### 13.7 POST /documents/:id/reject
+### 13.8 POST /documents/:id/reject
 Rechaza un documento.
 
 **Auth:** required  
@@ -1951,7 +1977,7 @@ Rechaza un documento.
 
 ---
 
-### 13.8 POST /documents/:id/publish
+### 13.9 POST /documents/:id/publish
 Publica un documento aprobado.
 
 **Auth:** required  
@@ -1966,7 +1992,7 @@ Publica un documento aprobado.
 
 ---
 
-### 13.9 POST /documents/:id/obsolete
+### 13.10 POST /documents/:id/obsolete
 Marca documento como obsoleto.
 
 **Auth:** required  
@@ -1985,7 +2011,7 @@ Marca documento como obsoleto.
 
 ---
 
-### 13.10 POST /documents/:id/cancel
+### 13.11 POST /documents/:id/cancel
 Cancela un documento.
 
 **Auth:** required  
@@ -2004,7 +2030,7 @@ Cancela un documento.
 
 ---
 
-### 13.11 POST /documents/:id/versions
+### 13.12 POST /documents/:id/versions
 Crea una nueva versión del documento.
 
 **Auth:** required  
@@ -2058,7 +2084,7 @@ Crea una nueva versión del documento.
 
 ---
 
-### 13.12 GET /documents/:id/versions
+### 13.13 GET /documents/:id/versions
 Lista versiones de un documento.
 
 **Auth:** required  
@@ -2073,7 +2099,7 @@ Lista versiones de un documento.
 
 ---
 
-### 13.13 GET /documents/versions/:versionId
+### 13.14 GET /documents/versions/:versionId
 Obtiene una versión específica.
 
 **Auth:** required  
@@ -2083,7 +2109,7 @@ Obtiene una versión específica.
 
 ---
 
-### 13.14 POST /documents/versions/:versionId/submit-for-review
+### 13.15 POST /documents/versions/:versionId/submit-for-review
 Envía versión a revisión.
 
 **Auth:** required  
@@ -2095,7 +2121,7 @@ Envía versión a revisión.
 
 ---
 
-### 13.15 POST /documents/versions/:versionId/review
+### 13.16 POST /documents/versions/:versionId/review
 Registra revisión de un revisor.
 
 **Auth:** required  
@@ -2118,7 +2144,7 @@ Registra revisión de un revisor.
 
 ---
 
-### 13.16 POST /documents/versions/:versionId/approve
+### 13.17 POST /documents/versions/:versionId/approve
 Aprueba una versión (flujo de aprobación explícito).
 
 **Auth:** required  
@@ -2144,7 +2170,7 @@ Aprueba una versión (flujo de aprobación explícito).
 
 ---
 
-### 13.17 POST /documents/versions/:versionId/reject
+### 13.18 POST /documents/versions/:versionId/reject
 Rechaza una versión.
 
 **Auth:** required  
@@ -2163,7 +2189,7 @@ Rechaza una versión.
 
 ---
 
-### 13.18 POST /documents/versions/:versionId/publish
+### 13.19 POST /documents/versions/:versionId/publish
 Publica una versión aprobada.
 
 **Auth:** required  
@@ -4118,6 +4144,7 @@ Consulta registros de auditoría.
 | Documents | GET | /documents/:id | required | documents:read | yes | no | Detalle de documento |
 | Documents | PATCH | /documents/:id | required | documents:update | yes | yes | Actualiza documento |
 | Documents | POST | /documents/:id/submit | required | documents:submit | yes | yes | Envía a revisión |
+| Documents | POST | /documents/:id/submit-for-approval | required | documents:approve | yes | yes | Envía a aprobación |
 | Documents | POST | /documents/:id/approve | required | documents:approve | yes | yes | Aprueba documento |
 | Documents | POST | /documents/:id/reject | required | documents:approve | yes | yes | Rechaza documento |
 | Documents | POST | /documents/:id/publish | required | documents:publish | yes | yes | Publica documento |
@@ -4213,7 +4240,7 @@ Consulta registros de auditoría.
 | Departments | POST /departments | GET /departments/:id | GET /departments | PATCH /departments/:id | POST /departments/:id/deactivate | - |
 | Areas | POST /areas | GET /areas/:id | GET /areas | PATCH /areas/:id | POST /areas/:id/deactivate | - |
 | Processes | POST /processes | GET /processes/:id | GET /processes | PATCH /processes/:id | POST /processes/:id/deactivate | - |
-| Documents | POST /documents | GET /documents/:id | GET /documents | PATCH /documents/:id | - | POST /documents/:id/submit, POST /documents/:id/approve, POST /documents/:id/reject, POST /documents/:id/publish, POST /documents/:id/obsolete, POST /documents/:id/cancel, POST /documents/:id/versions, POST /documents/:id/distribute |
+| Documents | POST /documents | GET /documents/:id | GET /documents | PATCH /documents/:id | - | POST /documents/:id/submit, POST /documents/:id/submit-for-approval, POST /documents/:id/approve, POST /documents/:id/reject, POST /documents/:id/publish, POST /documents/:id/obsolete, POST /documents/:id/cancel, POST /documents/:id/versions, POST /documents/:id/distribute |
 | Document Versions | POST /documents/:id/versions | GET /documents/versions/:versionId | GET /documents/:id/versions | - | - | POST /documents/versions/:versionId/submit-for-review, POST /documents/versions/:versionId/approve, POST /documents/versions/:versionId/reject, POST /documents/versions/:versionId/publish, POST /documents/versions/:versionId/sign |
 | Audit Programs | POST /audit-programs | GET /audit-programs/:id | GET /audit-programs | PATCH /audit-programs/:id | - | - |
 | Audits | POST /audits | GET /audits/:id | GET /audits | PATCH /audits/:id | - | POST /audits/:id/start, POST /audits/:id/complete, POST /audits/:id/cancel |
@@ -4301,6 +4328,7 @@ Consulta registros de auditoría.
 | /documents/:id | required | documents:read | yes | API | no |
 | /documents/:id | required | documents:update | yes | API | yes |
 | /documents/:id/submit | required | documents:submit | yes | API | yes |
+| /documents/:id/submit-for-approval | required | documents:approve | yes | API | yes |
 | /documents/:id/approve | required | documents:approve | yes | API | yes |
 | /documents/:id/reject | required | documents:approve | yes | API | yes |
 | /documents/:id/publish | required | documents:publish | yes | API | yes |

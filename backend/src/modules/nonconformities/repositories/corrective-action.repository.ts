@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { CorrectiveAction, CorrectiveActionListItem } from '../entities/nonconformity.entity';
+import { CorrectiveActionStatus } from '@prisma/client';
 
 @Injectable()
 export class CorrectiveActionRepository {
@@ -126,7 +127,7 @@ export class CorrectiveActionRepository {
         responsibleId: data.responsibleId,
         dueDate: data.dueDate,
         effectivenessRequired: data.effectivenessRequired ?? true,
-        status: 'OPEN',
+        status: 'PENDING',
       },
       select: {
         id: true,
@@ -164,7 +165,7 @@ export class CorrectiveActionRepository {
     description?: string;
     responsibleId?: string;
     dueDate?: Date | null;
-    status?: string;
+    status?: CorrectiveActionStatus;
     completedAt?: Date | null;
     effectivenessRequired?: boolean;
   }): Promise<CorrectiveAction> {

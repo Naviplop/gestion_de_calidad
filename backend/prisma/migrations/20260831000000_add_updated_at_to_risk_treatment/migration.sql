@@ -1,0 +1,1 @@
+ALTER TABLE "risk_treatments" ADD COLUMN "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now();

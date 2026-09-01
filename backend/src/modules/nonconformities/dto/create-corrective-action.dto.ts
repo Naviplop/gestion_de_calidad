@@ -1,4 +1,4 @@
-import { IsString, MaxLength, IsOptional, IsUUID, IsDate, IsBoolean, IsIn } from 'class-validator';
+import { IsString, MaxLength, IsOptional, IsUUID, IsDate, IsBoolean } from 'class-validator';
 
 export class CreateCorrectiveActionDto {
   @IsString()
@@ -39,10 +39,6 @@ export class UpdateCorrectiveActionDto {
   @IsOptional()
   @IsDate()
   dueDate?: Date;
-
-  @IsOptional()
-  @IsIn(['OPEN', 'IN_PROGRESS', 'COMPLETED'])
-  status?: string;
 
   @IsOptional()
   @IsBoolean()

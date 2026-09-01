@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
+import { useToast } from '../components/Toast';
 import type { OrganizationResponse, OrganizationSettingResponse } from '../lib/auth/auth.service';
 
 export function OrganizationSettingsPage() {
@@ -8,6 +9,7 @@ export function OrganizationSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -46,7 +48,7 @@ export function OrganizationSettingsPage() {
         logoUrl: org.logoUrl,
         primaryColor: org.primaryColor,
       });
-      alert('Organization updated');
+      showToast('Organization updated', 'success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update organization');
     } finally {
@@ -62,7 +64,7 @@ export function OrganizationSettingsPage() {
         data[setting.key] = setting.value;
       }
       await authApiClient.updateSettings(data);
-      alert('Settings updated');
+      showToast('Settings updated', 'success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update settings');
     } finally {

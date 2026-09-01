@@ -28,13 +28,14 @@ export function LoginPage() {
 
     try {
       const response = await authApiClientWithEvents.login(email, password);
-      if (response.mfaRequired) {
-        setMfaSessionId(response.sessionId);
+      const data = response.data;
+      if (data.mfaRequired) {
+        setMfaSessionId(data.sessionId);
         setMfaRequired(true);
         setLoading(false);
         return;
       }
-      login(response.accessToken, response.user);
+      login(data.accessToken, data.user);
       window.location.href = '/';
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';

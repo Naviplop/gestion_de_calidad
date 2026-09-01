@@ -384,6 +384,13 @@ model Document {
   @@unique([organizationId, code])
   @@index([organizationId, status])
   @@index([organizationId, nextReviewDate])
+  @@index([departmentId])
+  @@index([documentTypeId])
+  @@index([ownerId])
+  @@index([processId])
+  @@index([responsibleId])
+  @@index([createdById])
+  @@index([updatedById])
   @@map("documents")
 }
 
@@ -426,6 +433,8 @@ model DocumentVersion {
 
   @@unique([documentId, versionMajor, versionMinor])
   @@index([documentId])
+  @@index([organizationId])
+  @@index([fileAssetId])
   @@map("document_versions")
 }
 
@@ -660,7 +669,7 @@ model Audit {
   plannedEnd      DateTime?        @db.Timestamptz(6)
   actualStart     DateTime?        @db.Timestamptz(6)
   actualEnd       DateTime?        @db.Timestamptz(6)
-  status          String           @default("PLANNED") @db.VarChar(30)
+  status          AuditStatus          @default(PLANNED)
   scope           String?
   objective       String?
   createdAt       DateTime         @default(now()) @db.Timestamptz(6)
@@ -750,7 +759,7 @@ model Nonconformity {
   severity          String             @db.VarChar(30)
   detectedAt        DateTime           @db.Timestamptz(6)
   responsibleId     String?            @db.Uuid
-  status            String             @default("OPEN") @db.VarChar(30)
+  status            NonconformityStatus   @default(OPEN)
   closedAt          DateTime?          @db.Timestamptz(6)
   closedById        String?            @db.Uuid
   createdAt         DateTime           @default(now()) @db.Timestamptz(6)
@@ -795,7 +804,7 @@ model CorrectiveAction {
   responsibleId         String                         @db.Uuid
   dueDate               DateTime?                      @db.Date
   completedAt           DateTime?                      @db.Timestamptz(6)
-  status                String                         @default("OPEN") @db.VarChar(30)
+  status                CorrectiveActionStatus @default(PENDING)
   effectivenessRequired Boolean                        @default(true)
   createdAt             DateTime                       @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime                       @updatedAt @db.Timestamptz(6)
@@ -835,7 +844,7 @@ model Risk {
   description    String
   riskType       String           @db.VarChar(30)
   ownerId        String?          @db.Uuid
-  status         String           @default("OPEN") @db.VarChar(30)
+  status         RiskStatus            @default(IDENTIFIED)
   createdAt      DateTime         @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime         @updatedAt @db.Timestamptz(6)
   assessments    RiskAssessment[]
@@ -878,6 +887,7 @@ model RiskTreatment {
   status         String       @default("PLANNED") @db.VarChar(30)
   completedAt    DateTime?    @db.Timestamptz(6)
   createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
   organization   Organization @relation(fields: [organizationId], references: [id])
   responsible    User?        @relation("RiskTreatmentResponsible", fields: [responsibleId], references: [id])
   risk           Risk         @relation(fields: [riskId], references: [id], onDelete: Cascade)

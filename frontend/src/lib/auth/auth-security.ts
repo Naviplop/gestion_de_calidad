@@ -21,10 +21,10 @@ export class AuthApiClientWithSecurityEvents {
     });
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(email: string, password: string): Promise<{ data: LoginResponse }> {
     try {
       const response = await authApiClient.login(email, password);
-      this.setSessionId(response.user.id);
+      this.setSessionId(response.data.user.id);
       this.logSecurityEvent('AUTH_LOGIN_SUCCESS', {
         email: this.maskEmail(email),
       });
@@ -38,11 +38,11 @@ export class AuthApiClientWithSecurityEvents {
     }
   }
 
-  async verifyMfa(sessionId: string, mfaCode: string): Promise<LoginResponse> {
+  async verifyMfa(sessionId: string, mfaCode: string): Promise<{ data: LoginResponse }> {
     return authApiClient.verifyMfa(sessionId, mfaCode);
   }
 
-  async refresh(): Promise<RefreshResponse> {
+  async refresh(): Promise<{ data: RefreshResponse }> {
     try {
       const response = await authApiClient.refresh();
       this.logSecurityEvent('AUTH_LOGIN_SUCCESS', { action: 'refresh' });
@@ -66,35 +66,35 @@ export class AuthApiClientWithSecurityEvents {
     }
   }
 
-  async setupMfa(): Promise<MfaSetupResponse> {
+  async setupMfa(): Promise<{ data: MfaSetupResponse }> {
     return authApiClient.setupMfa();
   }
 
-  async verifyMfaSetup(code: string): Promise<MfaVerifySetupResponse> {
+  async verifyMfaSetup(code: string): Promise<{ data: MfaVerifySetupResponse }> {
     return authApiClient.verifyMfaSetup(code);
   }
 
-  async disableMfa(currentPassword: string, mfaCode?: string): Promise<MfaDisableResponse> {
+  async disableMfa(currentPassword: string, mfaCode?: string): Promise<{ data: MfaDisableResponse }> {
     return authApiClient.disableMfa(currentPassword, mfaCode);
   }
 
-  async getMfaStatus(): Promise<MfaStatusResponse> {
+  async getMfaStatus(): Promise<{ data: MfaStatusResponse }> {
     return authApiClient.getMfaStatus();
   }
 
-  async generateRecoveryCodes(): Promise<MfaRecoveryCodesResponse> {
+  async generateRecoveryCodes(): Promise<{ data: MfaRecoveryCodesResponse }> {
     return authApiClient.generateRecoveryCodes();
   }
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<ChangePasswordResponse> {
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ data: ChangePasswordResponse }> {
     return authApiClient.changePassword(currentPassword, newPassword);
   }
 
-  async requestPasswordReset(email: string): Promise<PasswordRecoveryRequestResponse> {
+  async requestPasswordReset(email: string): Promise<{ data: PasswordRecoveryRequestResponse }> {
     return authApiClient.requestPasswordReset(email);
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<PasswordRecoveryResetResponse> {
+  async resetPassword(token: string, newPassword: string): Promise<{ data: PasswordRecoveryResetResponse }> {
     return authApiClient.resetPassword(token, newPassword);
   }
 

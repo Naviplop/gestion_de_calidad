@@ -25,7 +25,6 @@ function loadStoredState(): Partial<AuthState> {
     const parsed = JSON.parse(raw);
     return {
       user: parsed.user || null,
-      accessToken: parsed.accessToken || null,
       isAuthenticated: parsed.isAuthenticated || false,
     };
   } catch {
@@ -40,7 +39,6 @@ function saveStoredState(state: AuthState & { mfaSessionId?: string | null }) {
       STORAGE_KEY,
       JSON.stringify({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
         mfaSessionId: state.mfaSessionId,
       })
@@ -67,6 +65,31 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
   useEffect(() => {
     saveStoredState({ user, accessToken, isAuthenticated, isLoading, error, mfaSessionId });
   }, [user, accessToken, isAuthenticated, isLoading, error, mfaSessionId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (isAuthenticated && !accessToken && !isLoading) {
+      setIsLoading(true);
+      authApiClientWithEvents.refresh()
+        .then((response) => {
+          if (cancelled) return;
+          const newAccessToken = response.data.accessToken;
+          authApiClientWithEvents.setAccessToken(newAccessToken);
+          setAccessToken(newAccessToken);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setIsAuthenticated(false);
+          setUser(null);
+          setAccessToken(null);
+          setIsLoading(false);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, accessToken, isLoading]);
 
   const login = useCallback((newAccessToken: string, newUser: AuthUser) => {
     authApiClientWithEvents.setAccessToken(newAccessToken);

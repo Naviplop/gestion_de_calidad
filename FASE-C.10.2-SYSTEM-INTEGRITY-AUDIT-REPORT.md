@@ -2,7 +2,7 @@
 
 **Proyecto:** QMS ISO Management  
 **Fecha:** 2026-08-28  
-**Auditor:** Kilo  
+**Auditor:** LAFM  
 **Estado Final:** GO  
 **Próxima Fase:** C.10.2 completada — siguiente bloque funcional: Training & Indicators
 
@@ -775,5 +775,5 @@ Criterios:
 ---
 
 *Reporte generado: 2026-08-28*  
-*Auditor: Kilo*  
+*Auditor: LAFM*  
 *Fase: C.10.2 — System Integrity Audit & Production Readiness*

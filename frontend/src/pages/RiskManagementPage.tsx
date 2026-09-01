@@ -266,7 +266,7 @@ export function RiskManagementPage() {
           type="text"
           placeholder="Search risks..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <select

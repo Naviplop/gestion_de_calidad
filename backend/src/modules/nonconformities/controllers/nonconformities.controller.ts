@@ -10,6 +10,7 @@ import { CreateNonconformityDto, UpdateNonconformityDto } from '../dto/create-no
 import { CreateRootCauseAnalysisDto, UpdateRootCauseAnalysisDto } from '../dto/create-root-cause.dto';
 import { CreateCorrectiveActionDto, UpdateCorrectiveActionDto } from '../dto/create-corrective-action.dto';
 import { CreateVerificationDto } from '../dto/create-verification.dto';
+import { NonconformityStatus, CorrectiveActionStatus } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {
   organizationId: string;
@@ -36,7 +37,7 @@ export class NonconformitiesController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: NonconformityStatus,
     @Query('severity') severity?: string,
     @Query('auditId') auditId?: string,
     @Query('findingId') findingId?: string,
@@ -122,7 +123,7 @@ export class NonconformitiesController {
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: CorrectiveActionStatus,
     @Query('responsibleId') responsibleId?: string,
   ) {
     return this.nonconformitiesService.listCorrectiveActions(

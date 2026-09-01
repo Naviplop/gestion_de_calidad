@@ -11,7 +11,7 @@ type DocumentStatus = 'DRAFT' | 'IN_REVIEW' | 'REJECTED' | 'PENDING_APPROVAL' | 
 const LIFECYCLE_ACTIONS: Record<DocumentStatus, string[]> = {
   DRAFT: ['submit', 'cancel'],
   REJECTED: ['submit', 'cancel'],
-  IN_REVIEW: ['cancel'],
+  IN_REVIEW: ['submitForApproval', 'cancel'],
   PENDING_APPROVAL: ['approve', 'reject', 'cancel'],
   APPROVED: ['publish'],
   PUBLISHED: ['obsolete'],
@@ -132,12 +132,16 @@ export function DocumentsPage() {
     setPendingAction(null);
     setActionLoading(action);
     try {
-      switch (action) {
-        case 'submit':
-          await authApiClient.submitDocument(documentId);
-          showToast('Document submitted for review', 'success');
-          break;
-        case 'approve':
+       switch (action) {
+         case 'submit':
+           await authApiClient.submitDocument(documentId);
+           showToast('Document submitted for review', 'success');
+           break;
+         case 'submitForApproval':
+           await authApiClient.submitForApprovalDocument(documentId);
+           showToast('Document submitted for approval', 'success');
+           break;
+         case 'approve':
           await authApiClient.approveDocument(documentId);
           showToast('Document approved', 'success');
           break;

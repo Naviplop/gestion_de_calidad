@@ -10,7 +10,14 @@ export function SecuritySettingsPage() {
   const [tab, setTab] = useState<Tab>('mfa');
 
   if (!accessToken) {
-    return null;
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <h1 className="mb-6 text-2xl font-bold text-gray-900">Security Settings</h1>
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-sm text-gray-500">Loading security settings...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -71,13 +78,16 @@ function MfaTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [showDisableForm, setShowDisableForm] = useState(false);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableMfaCode, setDisableMfaCode] = useState('');
 
   const loadStatus = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     try {
       const data = await authApiClientWithEvents.getMfaStatus();
-      setStatus(data);
+      setStatus(data.data);
     } catch {
       // ignore
     } finally {
@@ -95,8 +105,8 @@ function MfaTab() {
     setError(null);
     try {
       const data = await authApiClientWithEvents.setupMfa();
-      setSecret(data.secret);
-      setProvisioningUri(data.provisioningUri);
+      setSecret(data.data.secret);
+      setProvisioningUri(data.data.provisioningUri);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to setup MFA';
       setError(message);
@@ -124,16 +134,17 @@ function MfaTab() {
     }
   };
 
-  const handleDisable = async () => {
+  const handleDisable = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!accessToken) return;
-    const currentPassword = prompt('Enter your current password to disable MFA:');
-    if (!currentPassword) return;
-    const mfaCode = prompt('Enter your current MFA code:');
     setLoading(true);
     setError(null);
     try {
-      await authApiClientWithEvents.disableMfa(currentPassword, mfaCode || undefined);
+      await authApiClientWithEvents.disableMfa(disablePassword, disableMfaCode || undefined);
       showToast('MFA disabled', 'success');
+      setShowDisableForm(false);
+      setDisablePassword('');
+      setDisableMfaCode('');
       loadStatus();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to disable MFA';
@@ -149,7 +160,7 @@ function MfaTab() {
     setError(null);
     try {
       const data = await authApiClientWithEvents.generateRecoveryCodes();
-      setRecoveryCodes(data.codes);
+      setRecoveryCodes(data.data.codes);
       showToast('Recovery codes generated. Save them now.', 'success');
       loadStatus();
     } catch (err) {
@@ -249,13 +260,56 @@ function MfaTab() {
             </div>
           )}
 
-          <button
-            onClick={handleDisable}
-            disabled={loading}
-            className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
-          >
-            Disable MFA
-          </button>
+          {showDisableForm ? (
+            <form onSubmit={handleDisable} className="mt-4 space-y-4 rounded-md border border-red-200 bg-red-50 p-4">
+              <h4 className="text-sm font-medium text-red-800">Confirm MFA Disable</h4>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Current password</label>
+                <input
+                  type="password"
+                  value={disablePassword}
+                  onChange={(e) => setDisablePassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Current MFA code</label>
+                <input
+                  type="text"
+                  value={disableMfaCode}
+                  onChange={(e) => setDisableMfaCode(e.target.value)}
+                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="123456"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {loading ? 'Disabling...' : 'Confirm Disable'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowDisableForm(false); setDisablePassword(''); setDisableMfaCode(''); }}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              onClick={() => setShowDisableForm(true)}
+              disabled={loading}
+              className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              Disable MFA
+            </button>
+          )}
         </div>
       )}
     </div>

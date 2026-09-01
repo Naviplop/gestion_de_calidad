@@ -2,7 +2,7 @@
 
 **Project:** QMS Platform (Sistema de Gestión de Calidad)
 **Date:** 2026-08-27
-**Auditor:** Kilo
+**Auditor:** LAFM
 **Scope:** Full documentation vs Prisma schema, backend NestJS, frontend React/TypeScript
 **Status:** READ-ONLY AUDIT — No files modified
 

@@ -54,9 +54,4 @@ export class UpdateRiskDto {
   @IsOptional()
   @IsUUID()
   processId?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['IDENTIFIED', 'ASSESSED', 'TREATMENT_PLANNED', 'UNDER_CONTROL', 'CLOSED'])
-  status?: string;
 }

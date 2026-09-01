@@ -43,6 +43,7 @@ export class DocumentDistributionRepository {
   async findByDocument(documentId: string, organizationId: string): Promise<DocumentDistribution[]> {
     const distributions = await this.prisma.documentDistribution.findMany({
       where: { documentId, organizationId },
+      take: 1000,
       select: {
         id: true,
         documentId: true,

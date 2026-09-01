@@ -8,6 +8,7 @@ import { PrismaService } from '../../../database/prisma.service';
 import { CreateAuditProgramDto, UpdateAuditProgramDto } from '../dto/create-audit-program.dto';
 import { CreateAuditDto, UpdateAuditDto } from '../dto/create-audit.dto';
 import { CreateAuditChecklistDto, CreateAuditChecklistItemDto, UpdateAuditChecklistItemDto } from '../dto/audit-checklist.dto';
+import { AuditStatus } from '@prisma/client';
 import { CreateAuditFindingDto, UpdateAuditFindingDto } from '../dto/audit-finding.dto';
 import { AuditProgram, AuditProgramListItem, Audit, AuditListItem, AuditChecklist, AuditChecklistItem, AuditFinding, AuditFindingListItem } from '../entities/audit.entity';
 import { ConcurrencyService } from '../../../common/services/concurrency.service';
@@ -147,7 +148,7 @@ export class AuditsService {
 
   // ========== AUDITS ==========
 
-  async listAudits(organizationId: string, page: number, pageSize: number, search?: string, status?: string, auditProgramId?: string, processId?: string, leadAuditorId?: string, sortBy?: string, sortOrder?: string): Promise<{ data: AuditListItem[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }> {
+  async listAudits(organizationId: string, page: number, pageSize: number, search?: string, status?: AuditStatus, auditProgramId?: string, processId?: string, leadAuditorId?: string, sortBy?: string, sortOrder?: string): Promise<{ data: AuditListItem[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }> {
     return this.auditRepository.findListByOrganization(organizationId, page, pageSize, search, status, auditProgramId, processId, leadAuditorId, sortBy, sortOrder);
   }
 
@@ -211,7 +212,6 @@ export class AuditsService {
       plannedEnd: dto.plannedEnd,
       actualStart: dto.actualStart,
       actualEnd: dto.actualEnd,
-      status: dto.status,
       scope: dto.scope,
       objective: dto.objective,
     });

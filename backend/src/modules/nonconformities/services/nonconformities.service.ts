@@ -12,6 +12,7 @@ import { Nonconformity, NonconformityListItem, RootCauseAnalysis, CorrectiveActi
 import { ConcurrencyService } from '../../../common/services/concurrency.service';
 import { AuditLogService } from '../../audit-logs/services/audit-log.service';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
+import { NonconformityStatus, CorrectiveActionStatus } from '@prisma/client';
 
 @Injectable()
 export class NonconformitiesService {
@@ -61,7 +62,7 @@ export class NonconformitiesService {
     page: number,
     pageSize: number,
     search?: string,
-    status?: string,
+    status?: NonconformityStatus,
     severity?: string,
     auditId?: string,
     findingId?: string,
@@ -204,11 +205,16 @@ export class NonconformitiesService {
       select: { id: true },
     });
 
-    for (const action of actions) {
-      const verification = await this.prisma.correctiveActionVerification.findFirst({
-        where: { correctiveActionId: action.id },
+    const actionIds = actions.map((a) => a.id);
+    if (actionIds.length > 0) {
+      const verifications = await this.prisma.correctiveActionVerification.findMany({
+        where: { correctiveActionId: { in: actionIds } },
+        select: { correctiveActionId: true },
       });
-      if (!verification) {
+
+      const verifiedActionIds = new Set(verifications.map((v) => v.correctiveActionId));
+      const unverifiedActions = actionIds.filter((actionId) => !verifiedActionIds.has(actionId));
+      if (unverifiedActions.length > 0) {
         throw new BadRequestException('AllActionsMustBeVerified');
       }
     }
@@ -317,7 +323,7 @@ export class NonconformitiesService {
     nonconformityId: string,
     page: number,
     pageSize: number,
-    _status?: string,
+    _status?: CorrectiveActionStatus,
     _responsibleId?: string,
   ): Promise<{ data: CorrectiveActionListItem[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }> {
     const nonconformity = await this.nonconformityRepository.findById(nonconformityId, organizationId);
@@ -389,8 +395,6 @@ export class NonconformitiesService {
       description: dto.description,
       responsibleId: dto.responsibleId,
       dueDate: dto.dueDate,
-      status: dto.status,
-      completedAt: dto.status === 'COMPLETED' ? new Date() : existing.completedAt,
       effectivenessRequired: dto.effectivenessRequired,
     });
 

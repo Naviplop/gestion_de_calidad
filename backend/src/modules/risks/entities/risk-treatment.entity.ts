@@ -10,5 +10,6 @@ export class RiskTreatment {
     public status: string,
     public completedAt: Date | null,
     public createdAt: Date,
+    public updatedAt: Date,
   ) {}
 }

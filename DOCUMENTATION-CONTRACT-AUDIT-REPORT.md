@@ -2,7 +2,7 @@
 
 **Project:** QMS Platform (Sistema de Gestión de Calidad)
 **Date:** 2026-08-27
-**Auditor:** Kilo
+**Auditor:** LAFM
 **Scope:** All `.md` documentation vs Prisma schema, backend NestJS implementation, and frontend React/TypeScript implementation
 **Status:** READ-ONLY AUDIT — No files were modified
 

@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext, ForbiddenException, SetMetadata } from '@nestjs/common';
+import { Injectable, ExecutionContext, ForbiddenException, SetMetadata, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../database/prisma.service';
 import { SecurityEventService } from '../../modules/security-events/services/security-event.service';
@@ -16,6 +16,7 @@ export const RequireResourceOwnership = (metadata: ResourceOwnershipMetadata) =>
 
 @Injectable()
 export class AntiIdorGuard {
+  private readonly logger = new Logger(AntiIdorGuard.name);
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
@@ -284,7 +285,7 @@ export class AntiIdorGuard {
       }
       case 'fileAsset': {
         const fileAsset = await this.prisma.fileAsset.findFirst({
-          where: { id: resourceId },
+          where: { id: resourceId, deletedAt: null },
           select: { organizationId: true },
         });
         if (!fileAsset || fileAsset.organizationId !== currentOrganizationId) {
@@ -321,7 +322,11 @@ export class AntiIdorGuard {
           path: request.originalUrl,
           method: request.method,
         },
-      }).catch(() => {});
+      }).catch((error) => {
+        this.logger.warn('Failed to record security event for IDOR violation', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
 
       throw new ForbiddenException('Forbidden');
     }

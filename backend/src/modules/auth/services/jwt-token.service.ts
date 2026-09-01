@@ -19,6 +19,7 @@ export class JwtTokenService {
       expiresIn: '15m',
       issuer: 'QMS Platform',
       audience: 'QMS API',
+      algorithm: 'HS256',
     });
   }
 
@@ -28,6 +29,7 @@ export class JwtTokenService {
         secret: process.env.JWT_SECRET,
         issuer: 'QMS Platform',
         audience: 'QMS API',
+        algorithms: ['HS256'],
       });
 
       return payload as AccessTokenPayload;

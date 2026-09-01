@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Nonconformity, NonconformityListItem } from '../entities/nonconformity.entity';
+import { NonconformityStatus } from '@prisma/client';
 
 @Injectable()
 export class NonconformityRepository {
@@ -58,7 +59,7 @@ export class NonconformityRepository {
     page: number,
     pageSize: number,
     search?: string,
-    status?: string,
+    status?: NonconformityStatus,
     severity?: string,
     auditId?: string,
     findingId?: string,
@@ -248,7 +249,7 @@ export class NonconformityRepository {
     description?: string;
     severity?: string;
     responsibleId?: string | null;
-    status?: string;
+    status?: NonconformityStatus;
     closedAt?: Date | null;
     closedById?: string | null;
   }): Promise<Nonconformity> {

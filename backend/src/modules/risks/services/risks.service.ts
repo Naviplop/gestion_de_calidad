@@ -13,6 +13,7 @@ import { RiskAssessment } from '../entities/risk-assessment.entity';
 import { RiskControl } from '../entities/risk-control.entity';
 import { RiskTreatment } from '../entities/risk-treatment.entity';
 import { ConcurrencyService } from '../../../common/services/concurrency.service';
+import { RiskStatus } from '@prisma/client';
 import { AuditLogService } from '../../audit-logs/services/audit-log.service';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
 
@@ -64,7 +65,7 @@ export class RisksService {
     page: number,
     pageSize: number,
     search?: string,
-    status?: string,
+    status?: RiskStatus,
     riskType?: string,
     processId?: string,
     ownerId?: string,
@@ -182,7 +183,6 @@ export class RisksService {
       description: dto.description,
       riskType: dto.riskType,
       ownerId: dto.ownerId,
-      status: dto.status,
     });
 
     await this.recordAuditEvent({
@@ -457,7 +457,7 @@ export class RisksService {
     return treatment;
   }
 
-  async updateRiskTreatment(organizationId: string, riskId: string, id: string, userId: string, dto: UpdateRiskTreatmentDto, ipAddress?: string | null, userAgent?: string | null, correlationId?: string): Promise<RiskTreatment> {
+  async updateRiskTreatment(organizationId: string, riskId: string, id: string, userId: string, dto: UpdateRiskTreatmentDto, ifMatch?: string, ipAddress?: string | null, userAgent?: string | null, correlationId?: string): Promise<RiskTreatment> {
     const risk = await this.riskRepository.findById(riskId, organizationId);
     if (!risk) {
       throw new NotFoundException('RiskNotFound');
@@ -467,6 +467,8 @@ export class RisksService {
     if (!existing || existing.riskId !== riskId) {
       throw new NotFoundException('RiskTreatmentNotFound');
     }
+
+    this.concurrencyService.validateIfMatch(existing, ifMatch);
 
     if (dto.responsibleId) {
       const user = await this.prisma.user.findFirst({

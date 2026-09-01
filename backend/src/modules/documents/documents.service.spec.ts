@@ -169,6 +169,41 @@ describe('DocumentsService', () => {
     });
   });
 
+  describe('submitForApprovalDocument', () => {
+    it('should submit document for approval when status is IN_REVIEW', async () => {
+      const inReviewDoc = { ...mockDocument, status: DocumentStatus.IN_REVIEW };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      documentRepository.findById.mockResolvedValue(inReviewDoc as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      documentRepository.updateStatus.mockResolvedValue(inReviewDoc as any);
+
+      await service.submitForApprovalDocument('org-1', 'doc-1', 'user-1', undefined, undefined, undefined, undefined);
+      expect(documentRepository.updateStatus).toHaveBeenCalledWith('doc-1', 'org-1', DocumentStatus.PENDING_APPROVAL, 'user-1');
+    });
+
+    it('should throw BadRequestException when status is DRAFT', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      documentRepository.findById.mockResolvedValue(mockDocument as any);
+
+      await expect(service.submitForApprovalDocument('org-1', 'doc-1', 'user-1', undefined, undefined, undefined, undefined)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when status is PENDING_APPROVAL', async () => {
+      const pendingDoc = { ...mockDocument, status: DocumentStatus.PENDING_APPROVAL };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      documentRepository.findById.mockResolvedValue(pendingDoc as any);
+
+      await expect(service.submitForApprovalDocument('org-1', 'doc-1', 'user-1', undefined, undefined, undefined, undefined)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when document does not exist', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      documentRepository.findById.mockResolvedValue(null as any);
+
+      await expect(service.submitForApprovalDocument('org-1', 'doc-1', 'user-1', undefined, undefined, undefined, undefined)).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('publishDocument', () => {
     it('should publish document when status is APPROVED', async () => {
       const approvedDoc = { ...mockDocument, status: DocumentStatus.APPROVED };
@@ -274,17 +309,20 @@ describe('DocumentsService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tx: any = {
           documentDistribution: {
-            create: jest.fn().mockResolvedValue({
-              id: 'dist-1',
-              documentId: 'doc-1',
-              documentVersionId: 'ver-1',
-              organizationId: 'org-1',
-              assignedToUserId: 'user-1',
-              assignedToDepartmentId: null,
-              assignedToRoleId: null,
-              status: 'PENDING',
-              createdAt: new Date(),
-            }),
+            createMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findMany: jest.fn().mockResolvedValue([
+              {
+                id: 'dist-1',
+                documentId: 'doc-1',
+                documentVersionId: 'ver-1',
+                organizationId: 'org-1',
+                assignedToUserId: 'user-1',
+                assignedToDepartmentId: null,
+                assignedToRoleId: null,
+                status: 'PENDING',
+                createdAt: new Date(),
+              },
+            ]),
           },
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -321,6 +359,7 @@ describe('DocumentsService', () => {
     const transitions = [
       { from: 'DRAFT', to: 'APPROVED', action: 'approveDocument' },
       { from: 'DRAFT', to: 'CURRENT', action: 'publishDocument' },
+      { from: 'DRAFT', to: 'PENDING_APPROVAL', action: 'submitForApprovalDocument' },
       { from: 'CURRENT', to: 'DRAFT', action: 'submitDocument' },
       { from: 'OBSOLETE', to: 'CURRENT', action: 'publishDocument' },
       { from: 'CANCELLED', to: 'CURRENT', action: 'publishDocument' },

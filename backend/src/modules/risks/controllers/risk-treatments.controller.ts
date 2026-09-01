@@ -35,6 +35,7 @@ export class RiskTreatmentsController {
       throw new NotFoundException('RiskTreatmentNotFound');
     }
     const ctx = getRequestContext(req);
-    return this.risksService.updateRiskTreatment(req.organizationId, treatment.riskId, id, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    const ifMatch = req.headers['if-match'] as string | undefined;
+    return this.risksService.updateRiskTreatment(req.organizationId, treatment.riskId, id, req.userId, dto, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 }

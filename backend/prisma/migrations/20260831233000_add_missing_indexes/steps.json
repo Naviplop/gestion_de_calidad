@@ -1,0 +1,80 @@
+[
+  {
+    "description": "Add missing indexes for Document and DocumentVersion foreign keys",
+    "id": "20260831233000_add_missing_indexes",
+    "steps": [
+      {
+        "description": "Create index on document_versions.organizationId",
+        "id": "20260831233000_add_missing_indexes_1",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"document_versions_organizationId_idx\" ON \"document_versions\"(\"organizationId\");"
+        ]
+      },
+      {
+        "description": "Create index on document_versions.fileAssetId",
+        "id": "20260831233000_add_missing_indexes_2",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"document_versions_fileAssetId_idx\" ON \"document_versions\"(\"fileAssetId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.departmentId",
+        "id": "20260831233000_add_missing_indexes_3",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_departmentId_idx\" ON \"documents\"(\"departmentId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.documentTypeId",
+        "id": "20260831233000_add_missing_indexes_4",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_documentTypeId_idx\" ON \"documents\"(\"documentTypeId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.ownerId",
+        "id": "20260831233000_add_missing_indexes_5",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_ownerId_idx\" ON \"documents\"(\"ownerId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.processId",
+        "id": "20260831233000_add_missing_indexes_6",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_processId_idx\" ON \"documents\"(\"processId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.responsibleId",
+        "id": "20260831233000_add_missing_indexes_7",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_responsibleId_idx\" ON \"documents\"(\"responsibleId\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.createdById",
+        "id": "20260831233000_add_missing_indexes_8",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_createdById_idx\" ON \"documents\"(\"createdById\");"
+        ]
+      },
+      {
+        "description": "Create index on documents.updatedById",
+        "id": "20260831233000_add_missing_indexes_9",
+        "steps": [],
+        "sql": [
+          "CREATE INDEX \"documents_updatedById_idx\" ON \"documents\"(\"updatedById\");"
+        ]
+      }
+    ]
+  }
+]

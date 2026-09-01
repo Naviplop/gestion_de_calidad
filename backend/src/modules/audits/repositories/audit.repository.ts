@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Audit, AuditListItem } from '../entities/audit.entity';
+import { AuditStatus } from '@prisma/client';
 
 @Injectable()
 export class AuditRepository {
@@ -60,7 +61,7 @@ export class AuditRepository {
     page: number,
     pageSize: number,
     search?: string,
-    status?: string,
+    status?: AuditStatus,
     auditProgramId?: string,
     processId?: string,
     leadAuditorId?: string,
@@ -169,7 +170,7 @@ export class AuditRepository {
     plannedEnd?: Date | null;
     scope?: string | null;
     objective?: string | null;
-    status?: string;
+    status?: AuditStatus;
   }): Promise<Audit> {
     const audit = await this.prisma.audit.create({
       data: {
@@ -184,7 +185,7 @@ export class AuditRepository {
         plannedEnd: data.plannedEnd,
         scope: data.scope,
         objective: data.objective,
-        status: data.status || 'PLANNED',
+        status: data.status ?? 'PLANNED',
       },
       select: {
         id: true,
@@ -238,7 +239,7 @@ export class AuditRepository {
     plannedEnd?: Date | null;
     actualStart?: Date | null;
     actualEnd?: Date | null;
-    status?: string;
+    status?: AuditStatus;
     scope?: string | null;
     objective?: string | null;
   }): Promise<Audit> {

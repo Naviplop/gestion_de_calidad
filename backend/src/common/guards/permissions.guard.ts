@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../../modules/auth/decorators/auth.decorators';
 import { PrismaService } from '../../database/prisma.service';
@@ -6,6 +6,7 @@ import { SecurityEventService } from '../../modules/security-events/services/sec
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionsGuard.name);
   constructor(private readonly reflector: Reflector, private readonly prisma: PrismaService, private readonly securityEventService: SecurityEventService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -59,21 +60,27 @@ export class PermissionsGuard implements CanActivate {
       const userAgent = request.get?.('user-agent') || null;
       const correlationId = request.headers?.['x-correlation-id'];
 
-      this.securityEventService.recordEvent({
-        organizationId,
-        actorId: userId,
-        eventType: 'PERMISSION_DENIED',
-        severity: 'medium',
-        description: `Access denied to ${request.method} ${request.originalUrl}. Required: ${requiredPermissions.join(', ')}`,
-        ipAddress: ipAddress ?? null,
-        userAgent: userAgent ?? null,
-        correlationId: correlationId as string | undefined,
-        metadata: {
-          requiredPermissions,
-          path: request.originalUrl,
-          method: request.method,
-        },
-      }).catch(() => {});
+      try {
+        await this.securityEventService.recordEvent({
+          organizationId,
+          actorId: userId,
+          eventType: 'PERMISSION_DENIED',
+          severity: 'medium',
+          description: `Access denied to ${request.method} ${request.originalUrl}. Required: ${requiredPermissions.join(', ')}`,
+          ipAddress: ipAddress ?? null,
+          userAgent: userAgent ?? null,
+          correlationId: correlationId as string | undefined,
+          metadata: {
+            requiredPermissions,
+            path: request.originalUrl,
+            method: request.method,
+          },
+        });
+      } catch (error) {
+        this.logger.warn('Failed to record security event for permission denial', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
 
       throw new ForbiddenException('Forbidden');
     }

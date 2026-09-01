@@ -25,7 +25,7 @@ export function MfaChallengeForm({ sessionId, onSuccess }: MfaChallengeFormProps
 
     try {
       const response = await authApiClientWithEvents.verifyMfa(sessionId, code);
-      completeMfaLogin(response.accessToken, response.user);
+      completeMfaLogin(response.data.accessToken, response.data.user);
       onSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'MFA verification failed';

@@ -10,6 +10,7 @@ import { CreateRiskDto, UpdateRiskDto } from '../dto/create-risk.dto';
 import { CreateRiskAssessmentDto } from '../dto/risk-assessment.dto';
 import { CreateRiskControlDto } from '../dto/risk-control.dto';
 import { CreateRiskTreatmentDto } from '../dto/risk-treatment.dto';
+import { RiskStatus } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {
   organizationId: string;
@@ -36,7 +37,7 @@ export class RisksController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: RiskStatus,
     @Query('riskType') riskType?: string,
     @Query('processId') processId?: string,
     @Query('ownerId') ownerId?: string,

@@ -381,11 +381,7 @@ export class AuthApiClient {
       return undefined as T;
     }
 
-    const result = await response.json() as Promise<{ data?: T }>;
-    if (result && typeof result === 'object' && 'data' in result) {
-      return result.data as T;
-    }
-    return result as T;
+    return await response.json() as Promise<T>;
   }
 
   private async requestWithIfMatch<T>(endpoint: string, ifMatch: string, options: RequestInit = {}): Promise<T> {
@@ -431,22 +427,18 @@ export class AuthApiClient {
       return undefined as T;
     }
 
-    const result = await response.json() as Promise<{ data?: T }>;
-    if (result && typeof result === 'object' && 'data' in result) {
-      return result.data as T;
-    }
-    return result as T;
+    return await response.json() as Promise<T>;
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/login', {
+  async login(email: string, password: string): Promise<{ data: LoginResponse }> {
+    return this.request<{ data: LoginResponse }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
-  async refresh(): Promise<RefreshResponse> {
-    return this.request<RefreshResponse>('/auth/refresh', {
+  async refresh(): Promise<{ data: RefreshResponse }> {
+    return this.request<{ data: RefreshResponse }>('/auth/refresh', {
       method: 'POST',
     });
   }
@@ -457,59 +449,59 @@ export class AuthApiClient {
     });
   }
 
-  async verifyMfa(sessionId: string, mfaCode: string): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/mfa/verify', {
+  async verifyMfa(sessionId: string, mfaCode: string): Promise<{ data: LoginResponse }> {
+    return this.request<{ data: LoginResponse }>('/auth/mfa/verify', {
       method: 'POST',
       body: JSON.stringify({ sessionId, mfaCode }),
     });
   }
 
-  async setupMfa(): Promise<MfaSetupResponse> {
-    return this.request<MfaSetupResponse>('/auth/mfa/setup', {
+  async setupMfa(): Promise<{ data: MfaSetupResponse }> {
+    return this.request<{ data: MfaSetupResponse }>('/auth/mfa/setup', {
       method: 'POST',
     });
   }
 
-  async verifyMfaSetup(code: string): Promise<MfaVerifySetupResponse> {
-    return this.request<MfaVerifySetupResponse>('/auth/mfa/verify-setup', {
+  async verifyMfaSetup(code: string): Promise<{ data: MfaVerifySetupResponse }> {
+    return this.request<{ data: MfaVerifySetupResponse }>('/auth/mfa/verify-setup', {
       method: 'POST',
       body: JSON.stringify({ code }),
     });
   }
 
-  async disableMfa(currentPassword: string, mfaCode?: string): Promise<MfaDisableResponse> {
-    return this.request<MfaDisableResponse>('/auth/mfa/disable', {
+  async disableMfa(currentPassword: string, mfaCode?: string): Promise<{ data: MfaDisableResponse }> {
+    return this.request<{ data: MfaDisableResponse }>('/auth/mfa/disable', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, mfaCode }),
     });
   }
 
-  async getMfaStatus(): Promise<MfaStatusResponse> {
-    return this.request<MfaStatusResponse>('/auth/mfa/status');
+  async getMfaStatus(): Promise<{ data: MfaStatusResponse }> {
+    return this.request<{ data: MfaStatusResponse }>('/auth/mfa/status');
   }
 
-  async generateRecoveryCodes(): Promise<MfaRecoveryCodesResponse> {
-    return this.request<MfaRecoveryCodesResponse>('/auth/mfa/recovery-codes/generate', {
+  async generateRecoveryCodes(): Promise<{ data: MfaRecoveryCodesResponse }> {
+    return this.request<{ data: MfaRecoveryCodesResponse }>('/auth/mfa/recovery-codes/generate', {
       method: 'POST',
     });
   }
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<ChangePasswordResponse> {
-    return this.request<ChangePasswordResponse>('/auth/change-password', {
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ data: ChangePasswordResponse }> {
+    return this.request<{ data: ChangePasswordResponse }>('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   }
 
-  async requestPasswordReset(email: string): Promise<PasswordRecoveryRequestResponse> {
-    return this.request<PasswordRecoveryRequestResponse>('/auth/password-recovery/request', {
+  async requestPasswordReset(email: string): Promise<{ data: PasswordRecoveryRequestResponse }> {
+    return this.request<{ data: PasswordRecoveryRequestResponse }>('/auth/password-recovery/request', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<PasswordRecoveryResetResponse> {
-    return this.request<PasswordRecoveryResetResponse>('/auth/password-recovery/reset', {
+  async resetPassword(token: string, newPassword: string): Promise<{ data: PasswordRecoveryResetResponse }> {
+    return this.request<{ data: PasswordRecoveryResetResponse }>('/auth/password-recovery/reset', {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     });
@@ -574,14 +566,14 @@ export class AuthApiClient {
     await this.requestWithIfMatch(`/users/${id}/deactivate`, ifMatch || '', { method: 'POST' });
   }
 
-  async assignRoles(id: string, roleIds: string[], ifMatch?: string): Promise<{ data: Array<{ id: string; userId: string; roleId: string; assignedBy: string; assignedAt: string }> }> {
+  async assignRoles(id: string, roleIds: string[], ifMatch?: string): Promise<{ data: UserDetail }> {
     return this.requestWithIfMatch(`/users/${id}/roles`, ifMatch || '', {
       method: 'POST',
       body: JSON.stringify({ roleIds }),
     });
   }
 
-  async getUserPermissions(id: string): Promise<{ data: UserPermission[] }> {
+  async getUserPermissions(id: string): Promise<{ data: { permissions: UserPermission[] } }> {
     return this.request(`/users/${id}/permissions`);
   }
 
@@ -599,8 +591,8 @@ export class AuthApiClient {
     locale?: string;
     logoUrl?: string | null;
     primaryColor?: string | null;
-  }): Promise<{ data: OrganizationResponse }> {
-    return this.request('/organization', {
+  }, ifMatch?: string): Promise<{ data: OrganizationResponse }> {
+    return this.requestWithIfMatch('/organization', ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -610,8 +602,8 @@ export class AuthApiClient {
     return this.request('/organization/settings');
   }
 
-  async updateSettings(data: Record<string, unknown>): Promise<{ data: OrganizationSettingResponse[] }> {
-    return this.request('/organization/settings', {
+  async updateSettings(data: Record<string, unknown>, ifMatch?: string): Promise<{ data: OrganizationSettingResponse[] }> {
+    return this.requestWithIfMatch('/organization/settings', ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -651,15 +643,15 @@ export class AuthApiClient {
     description?: string;
     parentDepartmentId?: string;
     isActive?: boolean;
-  }): Promise<{ data: Department }> {
-    return this.request(`/departments/${id}`, {
+  }, ifMatch?: string): Promise<{ data: Department }> {
+    return this.requestWithIfMatch(`/departments/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async deactivateDepartment(id: string): Promise<void> {
-    await this.request(`/departments/${id}/deactivate`, { method: 'POST' });
+  async deactivateDepartment(id: string, ifMatch?: string): Promise<void> {
+    await this.requestWithIfMatch(`/departments/${id}/deactivate`, ifMatch || '', { method: 'POST' });
   }
 
   async listProcesses(params: {
@@ -704,15 +696,15 @@ export class AuthApiClient {
     ownerId?: string;
     processType?: string;
     isActive?: boolean;
-  }): Promise<{ data: Process }> {
-    return this.request(`/processes/${id}`, {
+  }, ifMatch?: string): Promise<{ data: Process }> {
+    return this.requestWithIfMatch(`/processes/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async deactivateProcess(id: string): Promise<void> {
-    await this.request(`/processes/${id}/deactivate`, { method: 'POST' });
+  async deactivateProcess(id: string, ifMatch?: string): Promise<void> {
+    await this.requestWithIfMatch(`/processes/${id}/deactivate`, ifMatch || '', { method: 'POST' });
   }
 
   async listStandards(params: {
@@ -813,17 +805,24 @@ export class AuthApiClient {
     responsibleId?: string;
     classification?: string;
     confidentiality?: string;
+    isActive?: boolean;
     nextReviewDate?: string | null;
   }, ifMatch?: string): Promise<{ data: Document }> {
-    const query = ifMatch ? `?ifMatch=${encodeURIComponent(ifMatch)}` : '';
-    return this.requestWithIfMatch(`/documents/${id}${query}`, ifMatch || '', {
+    return this.requestWithIfMatch(`/documents/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async submitDocument(id: string, ifMatch?: string): Promise<void> {
-    await this.requestWithIfMatch(`/documents/${id}/submit`, ifMatch || '', { method: 'POST' });
+  async submitDocument(id: string, changeReason?: string, ifMatch?: string): Promise<void> {
+    await this.requestWithIfMatch(`/documents/${id}/submit`, ifMatch || '', {
+      method: 'POST',
+      body: JSON.stringify({ changeReason }),
+    });
+  }
+
+  async submitForApprovalDocument(id: string, ifMatch?: string): Promise<void> {
+    await this.requestWithIfMatch(`/documents/${id}/submit-for-approval`, ifMatch || '', { method: 'POST' });
   }
 
   async approveDocument(id: string, ifMatch?: string): Promise<void> {
@@ -1149,7 +1148,7 @@ export class AuthApiClient {
     evidence?: string;
     comments?: string;
   }, ifMatch?: string): Promise<{ data: AuditChecklistItem }> {
-    return this.requestWithIfMatch(`/checklist-items/${id}`, ifMatch || '', {
+    return this.requestWithIfMatch(`/checklists/items/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -1255,6 +1254,7 @@ export class AuthApiClient {
   }
 
   async updateNonconformity(id: string, data: {
+    code?: string;
     title?: string;
     description?: string;
     severity?: string;
@@ -1290,7 +1290,7 @@ export class AuthApiClient {
     analysisData?: Record<string, unknown>;
     conclusion?: string;
   }, ifMatch?: string): Promise<{ data: RootCauseAnalysis }> {
-    return this.requestWithIfMatch(`/root-cause/${id}`, ifMatch || '', {
+    return this.requestWithIfMatch(`/nonconformities/root-cause/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -1329,6 +1329,7 @@ export class AuthApiClient {
   }
 
   async updateCorrectiveAction(id: string, data: {
+    code?: string;
     description?: string;
     responsibleId?: string;
     dueDate?: string;
@@ -1403,10 +1404,12 @@ export class AuthApiClient {
   }
 
   async updateRisk(id: string, data: {
+    code?: string;
     title?: string;
     description?: string;
     riskType?: string;
     ownerId?: string;
+    processId?: string;
     status?: string;
   }, ifMatch?: string): Promise<{ data: Risk }> {
     return this.requestWithIfMatch(`/risks/${id}`, ifMatch || '', {
@@ -1489,8 +1492,8 @@ export class AuthApiClient {
     dueDate?: string;
     status?: string;
     completedAt?: string;
-  }): Promise<{ data: RiskTreatment }> {
-    return this.request(`/risk-treatments/${id}`, {
+  }, ifMatch?: string): Promise<{ data: RiskTreatment }> {
+    return this.requestWithIfMatch(`/risk-treatments/${id}`, ifMatch || '', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -1781,6 +1784,7 @@ export interface RiskTreatment {
   status: string;
   completedAt: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface DashboardSummary {

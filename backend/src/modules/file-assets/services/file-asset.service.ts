@@ -7,6 +7,7 @@ import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MAX_FILE_SIZE_BYTES } from '../
 import { calculateChecksum } from '../../../common/utils/checksum.util';
 import { AuditLogService } from '../../audit-logs/services/audit-log.service';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
+import { randomUUID } from 'crypto';
 
 export interface FileAssetMetadata {
   id: string;
@@ -75,7 +76,7 @@ export class FileAssetService {
     metadata?: Record<string, unknown>;
   }, ipAddress?: string | null, userAgent?: string | null, correlationId?: string): Promise<{ id: string; sha256Hash: string }> {
     const existing = await this.prisma.fileAsset.findFirst({
-      where: { sha256Hash: data.sha256Hash },
+      where: { sha256Hash: data.sha256Hash, deletedAt: null },
       select: { id: true },
     });
 
@@ -146,13 +147,13 @@ export class FileAssetService {
     const checksum = calculateChecksum(file.buffer);
 
     const existing = await this.prisma.fileAsset.findFirst({
-      where: { sha256Hash: checksum },
+      where: { sha256Hash: checksum, deletedAt: null },
       select: { id: true },
     });
 
     if (existing) {
       const existingAsset = await this.prisma.fileAsset.findFirst({
-        where: { id: existing.id },
+        where: { id: existing.id, deletedAt: null },
         select: {
           id: true,
           originalFilename: true,
@@ -181,7 +182,7 @@ export class FileAssetService {
       };
     }
 
-    const fileAssetId = this.generateUuid();
+    const fileAssetId = randomUUID();
     const documentId = 'pending';
     const documentVersionId = 'pending';
 
@@ -260,7 +261,7 @@ export class FileAssetService {
 
   async findById(id: string, organizationId: string): Promise<FileAssetMetadata | null> {
     const fileAsset = await this.prisma.fileAsset.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId, deletedAt: null },
       select: {
         id: true,
         originalFilename: true,
@@ -291,7 +292,7 @@ export class FileAssetService {
 
   async download(id: string, organizationId: string, adapter: LocalFileStorageAdapter): Promise<{ stream: AsyncIterable<Buffer>; metadata: FileAssetMetadata }> {
     const fileAsset = await this.prisma.fileAsset.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId, deletedAt: null },
       select: {
         id: true,
         originalFilename: true,
@@ -336,9 +337,9 @@ export class FileAssetService {
     return { stream, metadata };
   }
 
-  async verifyIntegrity(id: string, expectedHash: string): Promise<boolean> {
+  async verifyIntegrity(id: string, expectedHash: string, organizationId?: string): Promise<boolean> {
     const fileAsset = await this.prisma.fileAsset.findFirst({
-      where: { id },
+      where: { id, deletedAt: null, ...(organizationId ? { organizationId } : {}) },
       select: { sha256Hash: true },
     });
 
@@ -351,7 +352,7 @@ export class FileAssetService {
 
   async delete(id: string, organizationId: string, adapter: LocalFileStorageAdapter, actorId: string, ipAddress?: string | null, userAgent?: string | null, correlationId?: string): Promise<void> {
     const fileAsset = await this.prisma.fileAsset.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId, deletedAt: null },
       select: {
         id: true,
         storageProvider: true,
@@ -389,7 +390,10 @@ export class FileAssetService {
       }
     }
 
-    await this.prisma.fileAsset.delete({ where: { id } });
+    await this.prisma.fileAsset.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
 
     await this.recordAuditEvent({
       organizationId,
@@ -406,14 +410,6 @@ export class FileAssetService {
   private getExtension(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase();
     return ext ? `.${ext}` : '';
-  }
-
-  private generateUuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 
   private bufferToAsyncIterable(buffer: Buffer): AsyncIterable<Buffer> {

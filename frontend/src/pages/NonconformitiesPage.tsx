@@ -128,12 +128,10 @@ export function NonconformitiesPage() {
     }
   };
 
-  const handleClose = () => {
-    if (selectedNonconformity?.status === 'CLOSED') {
-      showToast('Nonconformity is already closed', 'info');
-      return;
-    }
-    setPendingAction({ action: 'close', ncId: selectedNonconformity!.id });
+  const handleClose = (ncId?: string) => {
+    const id = ncId ?? selectedNonconformity?.id;
+    if (!id) return;
+    setPendingAction({ action: 'close', ncId: id });
   };
 
   const handleConfirmedClose = async () => {
@@ -286,7 +284,7 @@ export function NonconformitiesPage() {
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {canClose(nc) ? (
                       <button
-                        onClick={() => handleClose()}
+                        onClick={() => handleClose(nc.id)}
                         disabled={actionLoading === 'close'}
                         className="text-green-600 hover:text-green-800 disabled:opacity-50"
                       >
@@ -459,7 +457,7 @@ export function NonconformitiesPage() {
             <div className="mt-6 flex items-center justify-end gap-2">
               {canClose(selectedNonconformity) && (
                 <button
-                  onClick={handleClose}
+                  onClick={() => handleClose()}
                   disabled={actionLoading === 'close'}
                   className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
                 >

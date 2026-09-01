@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Risk, RiskListItem } from '../entities/risk.entity';
+import { RiskStatus } from '@prisma/client';
 
 @Injectable()
 export class RiskRepository {
@@ -48,7 +49,7 @@ export class RiskRepository {
     page: number,
     pageSize: number,
     search?: string,
-    status?: string,
+    status?: RiskStatus,
     riskType?: string,
     processId?: string,
     ownerId?: string,
@@ -196,7 +197,7 @@ export class RiskRepository {
     description?: string;
     riskType?: string;
     ownerId?: string | null;
-    status?: string;
+    status?: RiskStatus;
   }): Promise<Risk> {
     await this.prisma.risk.findFirstOrThrow({
       where: { id, organizationId },
