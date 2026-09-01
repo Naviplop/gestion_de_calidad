@@ -8,7 +8,7 @@ export class UserRepository {
 
   async findByEmail(organizationId: string, email: string): Promise<User | null> {
     const where: Record<string, unknown> = {
-      email: { equals: email.toLowerCase() },
+      email: { equals: email.toLowerCase(), mode: 'insensitive' },
       deletedAt: null,
     };
 

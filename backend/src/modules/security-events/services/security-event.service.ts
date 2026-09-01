@@ -35,6 +35,10 @@ export class SecurityEventService {
     userAgent?: string | null;
     correlationId?: string;
   }): Promise<SecurityEvent | null> {
+    if (!data.organizationId) {
+      return null;
+    }
+
     try {
       const previousEvent = await this.securityEventRepository.findLatestByOrganization(data.organizationId);
       const previousHash = previousEvent?.eventHash ?? null;
