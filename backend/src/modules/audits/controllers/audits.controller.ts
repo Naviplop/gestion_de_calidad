@@ -1,8 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { AuditsService } from '../services/audits.service';
@@ -25,8 +22,7 @@ function getRequestContext(req: AuthenticatedRequest) {
   };
 }
 
-@Controller('audit-programs')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
+@Controller('audits')
 export class AuditProgramsController {
   constructor(private readonly auditsService: AuditsService) {}
 
@@ -75,7 +71,6 @@ export class AuditProgramsController {
 }
 
 @Controller('audits')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class AuditsController {
   constructor(private readonly auditsService: AuditsService) {}
 
@@ -159,7 +154,6 @@ export class AuditsController {
 }
 
 @Controller('audits/:auditId/checklists')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class AuditChecklistsController {
   constructor(private readonly auditsService: AuditsService) {}
 
@@ -177,7 +171,6 @@ export class AuditChecklistsController {
 }
 
 @Controller('checklists')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class ChecklistsController {
   constructor(private readonly auditsService: AuditsService) {}
 
@@ -206,7 +199,6 @@ export class ChecklistsController {
 }
 
 @Controller('audits/:auditId/findings')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class AuditFindingsController {
   constructor(private readonly auditsService: AuditsService) {}
 
@@ -243,7 +235,6 @@ export class AuditFindingsController {
 }
 
 @Controller('findings')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class FindingsController {
   constructor(private readonly auditsService: AuditsService) {}
 

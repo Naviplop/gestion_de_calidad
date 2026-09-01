@@ -1,7 +1,5 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { DashboardService } from '../services/dashboard.service';
 
@@ -11,7 +9,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('dashboard')
-@UseGuards(AuthGuard, PermissionsGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 

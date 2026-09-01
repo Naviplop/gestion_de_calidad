@@ -1,8 +1,5 @@
-import { Controller, Patch, Param, Body, UseGuards, Req, NotFoundException } from '@nestjs/common';
+import { Controller, Patch, Param, Body, Req, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { RisksService } from '../services/risks.service';
@@ -22,7 +19,6 @@ function getRequestContext(req: AuthenticatedRequest) {
 }
 
 @Controller('risk-treatments')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class RiskTreatmentsController {
   constructor(private readonly risksService: RisksService) {}
 

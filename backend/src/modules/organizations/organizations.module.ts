@@ -7,22 +7,18 @@ import { OrganizationRepository } from './repositories/organization.repository';
 import { OrganizationMembershipRepository } from './repositories/organization-membership.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
-import { SecurityEventsModule } from '../security-events/security-events.module';
+import { CommonModule } from '../../common/common.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule, SecurityEventsModule, AuditLogsModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule, AuditLogsModule],
   controllers: [OrganizationsController, OrganizationMembershipController],
   providers: [
     OrganizationsService,
     OrganizationRepository,
     OrganizationMembershipService,
     OrganizationMembershipRepository,
-    TenantContextGuard,
-    AntiIdorGuard,
   ],
   exports: [
     OrganizationsService,

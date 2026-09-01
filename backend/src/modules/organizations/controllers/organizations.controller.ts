@@ -1,9 +1,5 @@
-import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { TenantContextGuard } from '../../../common/guards/tenant-context.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
+import { Controller, Get, Patch, Body, Request } from '@nestjs/common';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { OrganizationsService } from '../services/organizations.service';
 import { UpdateOrganizationDto } from '../dto/update-organization.dto';
 
@@ -35,7 +31,6 @@ function getRequestContext(req: AuthenticatedRequest) {
 }
 
 @Controller('organization')
-@UseGuards(AuthGuard, TenantContextGuard, PermissionsGuard, AntiIdorGuard)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 

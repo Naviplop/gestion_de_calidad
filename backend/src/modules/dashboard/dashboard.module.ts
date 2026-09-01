@@ -4,12 +4,12 @@ import { DashboardService } from './services/dashboard.service';
 import { DashboardRepository } from './repositories/dashboard.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { CommonModule } from '../../common/common.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule],
+  imports: [DatabaseModule, AuthModule, CommonModule],
   controllers: [DashboardController],
-  providers: [DashboardService, DashboardRepository, PermissionsGuard],
+  providers: [DashboardService, DashboardRepository],
   exports: [DashboardService],
 })
 export class DashboardModule {}

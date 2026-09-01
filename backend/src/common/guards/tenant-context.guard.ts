@@ -1,12 +1,22 @@
 import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { OrganizationMembership, UserMembershipStatus } from '../../modules/organizations/entities/organization.entity';
+import { IS_PUBLIC_KEY } from '../../modules/auth/decorators/auth.decorators';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class TenantContextGuard {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const userId = request.userId;
     const organizationId = request.organizationId;

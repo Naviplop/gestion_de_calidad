@@ -3,9 +3,10 @@ import { AuditLogService } from './services/audit-log.service';
 import { AuditLogRepository } from './repositories/audit-log.repository';
 import { AuditLogsController } from './controllers/audit-logs.controller';
 import { DatabaseModule } from '../../database/database.module';
+import { CommonModule } from '../../common/common.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, CommonModule],
   controllers: [AuditLogsController],
   providers: [AuditLogService, AuditLogRepository],
   exports: [AuditLogService],

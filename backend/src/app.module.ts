@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from './database/database.module';
+import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -22,15 +23,11 @@ import { TenantContextGuard } from './common/guards/tenant-context.guard';
 import { AntiIdorGuard } from './common/guards/anti-idor.guard';
 
 @Module({
-  imports: [DatabaseModule, HealthModule, AuthModule, UsersModule, OrganizationsModule, DepartmentsModule, ProcessesModule, StandardsModule, DocumentsModule, AuditsModule, NonconformitiesModule, RisksModule, DashboardModule, AuditLogsModule, SecurityEventsModule, FileAssetsModule],
+  imports: [DatabaseModule, ConfigModule, HealthModule, AuthModule, UsersModule, OrganizationsModule, DepartmentsModule, ProcessesModule, StandardsModule, DocumentsModule, AuditsModule, NonconformitiesModule, RisksModule, DashboardModule, AuditLogsModule, SecurityEventsModule, FileAssetsModule],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: AntiIdorGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: PermissionsGuard,
+      useClass: AuthGuard,
     },
     {
       provide: APP_GUARD,
@@ -38,7 +35,11 @@ import { AntiIdorGuard } from './common/guards/anti-idor.guard';
     },
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AntiIdorGuard,
     },
   ],
 })

@@ -6,16 +6,14 @@ import { CorrectiveActionRepository } from './repositories/corrective-action.rep
 import { CorrectiveActionVerificationRepository } from './repositories/corrective-action-verification.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
-import { SecurityEventsModule } from '../security-events/security-events.module';
+import { CommonModule } from '../../common/common.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { NonconformitiesController } from './controllers/nonconformities.controller';
 import { CorrectiveActionsController } from './controllers/nonconformities.controller';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule, SecurityEventsModule, AuditLogsModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule, AuditLogsModule],
   controllers: [NonconformitiesController, CorrectiveActionsController],
   providers: [
     NonconformitiesService,
@@ -23,8 +21,6 @@ import { ConfigModule } from '@nestjs/config';
     RootCauseAnalysisRepository,
     CorrectiveActionRepository,
     CorrectiveActionVerificationRepository,
-    PermissionsGuard,
-    AntiIdorGuard,
   ],
   exports: [NonconformitiesService],
 })

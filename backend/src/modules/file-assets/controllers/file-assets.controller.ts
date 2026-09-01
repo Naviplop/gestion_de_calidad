@@ -1,10 +1,7 @@
 import { Controller, Post, Body, Param, Get, UseGuards, Req, Query, UseInterceptors, UploadedFile as NestUploadedFile } from '@nestjs/common';
 import { Request } from 'express';
 import { FileAssetService, UploadedFile } from '../services/file-asset.service';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
@@ -27,7 +24,7 @@ function getRequestContext(req: AuthenticatedRequest) {
 }
 
 @Controller('file-assets')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard, ThrottlerGuard)
+@UseGuards(ThrottlerGuard)
 export class FileAssetsController {
   constructor(
     private readonly fileAssetService: FileAssetService,

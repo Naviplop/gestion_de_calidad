@@ -1,7 +1,6 @@
 import { Controller, Get, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { AuditLogService } from '../services/audit-log.service';
-import { AuthGuard } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
@@ -13,7 +12,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('audit-logs')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
+@UseGuards(PermissionsGuard, AntiIdorGuard)
 export class AuditLogsController {
   constructor(private readonly auditLogService: AuditLogService) {}
 

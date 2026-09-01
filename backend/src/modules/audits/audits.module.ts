@@ -7,9 +7,7 @@ import { AuditChecklistItemRepository } from './repositories/audit-checklist-ite
 import { AuditFindingRepository } from './repositories/audit-finding.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
-import { SecurityEventsModule } from '../security-events/security-events.module';
+import { CommonModule } from '../../common/common.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { AuditProgramsController } from './controllers/audits.controller';
 import { AuditsController } from './controllers/audits.controller';
@@ -20,7 +18,7 @@ import { FindingsController } from './controllers/audits.controller';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule, SecurityEventsModule, AuditLogsModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule, AuditLogsModule],
   controllers: [
     AuditProgramsController,
     AuditsController,
@@ -36,8 +34,6 @@ import { ConfigModule } from '@nestjs/config';
     AuditChecklistRepository,
     AuditChecklistItemRepository,
     AuditFindingRepository,
-    PermissionsGuard,
-    AntiIdorGuard,
   ],
   exports: [AuditsService],
 })

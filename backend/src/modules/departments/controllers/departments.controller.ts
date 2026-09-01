@@ -1,8 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { DepartmentsService } from '../services/departments.service';
@@ -15,7 +12,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('departments')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 

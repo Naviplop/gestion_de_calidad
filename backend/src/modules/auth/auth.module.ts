@@ -70,7 +70,6 @@ const THROTTLE_LIMIT = parseInt(process.env.AUTH_THROTTLE_LIMIT || '5', 10);
     PasswordPolicyService,
     AuthenticationService,
     ThrottlerModule,
-    ThrottlerGuard,
   ],
 })
 export class AuthModule {}

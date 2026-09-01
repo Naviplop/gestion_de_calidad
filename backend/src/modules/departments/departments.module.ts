@@ -4,14 +4,13 @@ import { DepartmentsService } from './services/departments.service';
 import { DepartmentRepository } from './repositories/department.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
+import { CommonModule } from '../../common/common.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule],
   controllers: [DepartmentsController],
-  providers: [DepartmentsService, DepartmentRepository, PermissionsGuard, AntiIdorGuard],
+  providers: [DepartmentsService, DepartmentRepository],
   exports: [DepartmentsService, DepartmentRepository],
 })
 export class DepartmentsModule {}

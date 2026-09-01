@@ -1,7 +1,4 @@
-import { Controller, Get, Post, Delete, Body, UseGuards, Request, Param } from '@nestjs/common';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { TenantContextGuard } from '../../../common/guards/tenant-context.guard';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
+import { Controller, Get, Post, Delete, Body, Request, Param } from '@nestjs/common';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { OrganizationMembershipService } from '../services/organization-membership.service';
@@ -13,7 +10,6 @@ interface AuthenticatedRequest {
 }
 
 @Controller('organization/members')
-@UseGuards(AuthGuard, TenantContextGuard, AntiIdorGuard)
 export class OrganizationMembershipController {
   constructor(private readonly membershipService: OrganizationMembershipService) {}
 

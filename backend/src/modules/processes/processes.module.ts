@@ -4,14 +4,13 @@ import { ProcessesService } from './services/processes.service';
 import { ProcessRepository } from './repositories/process.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
+import { CommonModule } from '../../common/common.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule],
   controllers: [ProcessesController],
-  providers: [ProcessesService, ProcessRepository, PermissionsGuard, AntiIdorGuard],
+  providers: [ProcessesService, ProcessRepository],
   exports: [ProcessesService, ProcessRepository],
 })
 export class ProcessesModule {}

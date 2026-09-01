@@ -39,7 +39,8 @@ export class AntiIdorGuard {
       throw new ForbiddenException('Forbidden');
     }
 
-    const resourceId = request.params[metadata.resourceIdParam];
+    const rawResourceId = request.params[metadata.resourceIdParam];
+    const resourceId = Array.isArray(rawResourceId) ? rawResourceId[0] : rawResourceId;
     if (!resourceId) {
       throw new ForbiddenException('Forbidden');
     }

@@ -1,8 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
 import { DocumentsService } from '../services/documents.service';
@@ -25,7 +22,6 @@ function getRequestContext(req: AuthenticatedRequest) {
 }
 
 @Controller('documents')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 

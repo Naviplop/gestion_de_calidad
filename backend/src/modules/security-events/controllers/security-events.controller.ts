@@ -1,7 +1,6 @@
 import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { SecurityEventService } from '../services/security-event.service';
-import { AuthGuard } from '../../auth/guards/auth.guard';
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { AntiIdorGuard } from '../../../common/guards/anti-idor.guard';
@@ -13,7 +12,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('security-events')
-@UseGuards(AuthGuard, PermissionsGuard, AntiIdorGuard)
+@UseGuards(PermissionsGuard, AntiIdorGuard)
 export class SecurityEventsController {
   constructor(private readonly securityEventService: SecurityEventService) {}
 

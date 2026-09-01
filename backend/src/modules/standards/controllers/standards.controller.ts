@@ -1,7 +1,5 @@
-import { Controller, Get, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { StandardsService } from '../services/standards.service';
 
@@ -11,7 +9,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('standards')
-@UseGuards(AuthGuard, PermissionsGuard)
 export class StandardsController {
   constructor(private readonly standardsService: StandardsService) {}
 

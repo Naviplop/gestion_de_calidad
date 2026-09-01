@@ -8,14 +8,12 @@ import { DocumentApprovalRepository } from './repositories/document-approval.rep
 import { DocumentDistributionRepository } from './repositories/document-distribution.repository';
 import { DatabaseModule } from '../../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { AntiIdorGuard } from '../../common/guards/anti-idor.guard';
-import { SecurityEventsModule } from '../security-events/security-events.module';
+import { CommonModule } from '../../common/common.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule, SecurityEventsModule, AuditLogsModule],
+  imports: [DatabaseModule, AuthModule, ConfigModule, CommonModule, AuditLogsModule],
   controllers: [DocumentsController],
   providers: [
     DocumentsService,
@@ -24,8 +22,6 @@ import { ConfigModule } from '@nestjs/config';
     DocumentReviewerRepository,
     DocumentApprovalRepository,
     DocumentDistributionRepository,
-    PermissionsGuard,
-    AntiIdorGuard,
   ],
   exports: [DocumentsService],
 })
