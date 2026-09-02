@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
 import type { AuthState, AuthUser } from '../lib/auth/auth.types';
 import { authApiClientWithEvents } from '../lib/auth/auth-security';
 
@@ -58,9 +58,11 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(initialState?.user ?? stored.user ?? null);
   const [accessToken, setAccessToken] = useState<string | null>(initialState?.accessToken ?? stored.accessToken ?? null);
   const [isAuthenticated, setIsAuthenticated] = useState(initialState?.isAuthenticated ?? stored.isAuthenticated ?? false);
-  const [isLoading, setIsLoading] = useState(initialState?.isLoading ?? false);
+  const initialIsLoading = initialState?.isLoading ?? (stored.isAuthenticated && !stored.accessToken) ?? false;
+  const [isLoading, setIsLoading] = useState<boolean>(initialIsLoading);
   const [error, setError] = useState<string | null>(initialState?.error ?? null);
   const [mfaSessionId, setMfaSessionId] = useState<string | null>(initialState?.mfaSessionId ?? stored.mfaSessionId ?? null);
+  const refreshInProgress = useRef(false);
 
   useEffect(() => {
     saveStoredState({ user, accessToken, isAuthenticated, isLoading, error, mfaSessionId });
@@ -68,7 +70,8 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
 
   useEffect(() => {
     let cancelled = false;
-    if (isAuthenticated && !accessToken && !isLoading) {
+    if (isAuthenticated && !accessToken && !refreshInProgress.current) {
+      refreshInProgress.current = true;
       setIsLoading(true);
       authApiClientWithEvents.refresh()
         .then((response) => {
@@ -77,6 +80,7 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
           authApiClientWithEvents.setAccessToken(newAccessToken);
           setAccessToken(newAccessToken);
           setIsLoading(false);
+          refreshInProgress.current = false;
         })
         .catch(() => {
           if (cancelled) return;
@@ -84,12 +88,13 @@ export function AuthProvider({ children, initialState }: AuthProviderProps) {
           setUser(null);
           setAccessToken(null);
           setIsLoading(false);
+          refreshInProgress.current = false;
         });
     }
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, isLoading]);
+  }, [isAuthenticated, accessToken]);
 
   const login = useCallback((newAccessToken: string, newUser: AuthUser) => {
     authApiClientWithEvents.setAccessToken(newAccessToken);

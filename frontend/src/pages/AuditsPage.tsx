@@ -46,7 +46,7 @@ export function AuditsPage() {
       setAudits(response.data);
       setMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audits');
+      setError(err instanceof Error ? err.message : 'Error al cargar las auditorías');
     } finally {
       setLoading(false);
     }
@@ -96,10 +96,10 @@ export function AuditsPage() {
         objective: objective || undefined,
       });
       setShowCreateModal(false);
-      showToast('Audit created successfully', 'success');
+      showToast('Auditoría creada exitosamente', 'success');
       loadAudits();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create audit');
+      setFormError(err instanceof Error ? err.message : 'Error al crear la auditoría');
     }
   };
 
@@ -108,7 +108,7 @@ export function AuditsPage() {
       const response = await authApiClient.listChecklists(auditId);
       setChecklists(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load checklists');
+      setError(err instanceof Error ? err.message : 'Error al cargar las listas de verificación');
     }
   };
 
@@ -121,7 +121,7 @@ export function AuditsPage() {
       setFindings(response.data);
       setFindingsMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load findings');
+      setError(err instanceof Error ? err.message : 'Error al cargar los hallazgos');
     }
   };
 
@@ -133,7 +133,7 @@ export function AuditsPage() {
       await loadChecklists(auditId);
       await loadFindings(auditId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit detail');
+      setError(err instanceof Error ? err.message : 'Error al cargar el detalle de la auditoría');
     }
   };
 
@@ -151,15 +151,15 @@ export function AuditsPage() {
       switch (action) {
         case 'start':
           await authApiClient.startAudit(auditId, new Date().toISOString());
-          showToast('Audit started', 'success');
+          showToast('Auditoría iniciada', 'success');
           break;
         case 'complete':
           await authApiClient.completeAudit(auditId, new Date().toISOString());
-          showToast('Audit completed', 'success');
+          showToast('Auditoría completada', 'success');
           break;
         case 'cancel':
           await authApiClient.cancelAudit(auditId, 'Cancelled by user');
-          showToast('Audit cancelled', 'warning');
+          showToast('Auditoría cancelada', 'warning');
           break;
         default:
           break;
@@ -170,7 +170,7 @@ export function AuditsPage() {
       }
       loadAudits();
     } catch (err) {
-      const message = err instanceof Error ? err.message : `Failed to ${action} audit`;
+      const message = err instanceof Error ? err.message : `Error al ${action} la auditoría`;
       setError(message);
       showToast(message, 'error');
     } finally {
@@ -194,16 +194,16 @@ export function AuditsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Audits</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Auditorías</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage audits for your organization.
+            Gestiona las auditorías de tu organización.
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
         >
-          Create Audit
+          Crear auditoría
         </button>
       </div>
 
@@ -216,7 +216,7 @@ export function AuditsPage() {
       <div className="flex gap-4">
         <input
           type="text"
-          placeholder="Search audits..."
+          placeholder="Buscar auditorías..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -227,22 +227,22 @@ export function AuditsPage() {
           onChange={(e) => handleStatusFilter(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All statuses</option>
-          <option value="PLANNED">Planned</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
+        <option value="">Todos los estados</option>
+        <option value="PLANNED">Planificada</option>
+        <option value="IN_PROGRESS">En progreso</option>
+        <option value="COMPLETED">Completada</option>
+        <option value="CANCELLED">Cancelada</option>
         </select>
         <button
           onClick={handleSearch}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
         >
-          Search
+          Buscar
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center text-sm text-gray-500">Loading...</div>
+          <div className="text-center text-sm text-gray-500">Cargando...</div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
@@ -250,9 +250,9 @@ export function AuditsPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Planned</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -313,7 +313,7 @@ export function AuditsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Create Audit</h2>
+            <h2 className="text-lg font-semibold">Crear auditoría</h2>
             <form onSubmit={handleCreate} className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Code</label>
@@ -335,7 +335,7 @@ export function AuditsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Planned Start</label>
+                  <label className="block text-sm font-medium text-slate-700">Inicio planificado</label>
                   <input
                     type="datetime-local"
                     name="plannedStart"
@@ -362,13 +362,13 @@ export function AuditsPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
                 >
-                  Create
+                  Crear
                 </button>
               </div>
             </form>
@@ -385,7 +385,7 @@ export function AuditsPage() {
                 onClick={() => setSelectedAudit(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                Close
+                Cerrar
               </button>
             </div>
             <div className="mt-4 flex gap-4 border-b border-gray-200">
@@ -393,19 +393,19 @@ export function AuditsPage() {
                 onClick={() => setDetailTab('details')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Details
+                Detalles
               </button>
               <button
                 onClick={() => setDetailTab('checklists')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'checklists' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Checklists
+                Listas de verificación
               </button>
               <button
                 onClick={() => setDetailTab('findings')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'findings' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Findings
+                Hallazgos
               </button>
             </div>
             <div className="mt-4">

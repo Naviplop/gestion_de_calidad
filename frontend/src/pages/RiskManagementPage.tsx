@@ -250,12 +250,12 @@ export function RiskManagementPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Risk Management</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Gestión de riesgos</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
         >
-          New Risk
+          Nuevo riesgo
         </button>
       </div>
 
@@ -264,7 +264,7 @@ export function RiskManagementPage() {
       <div className="flex items-center gap-4">
         <input
           type="text"
-          placeholder="Search risks..."
+          placeholder="Buscar riesgos..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -274,7 +274,7 @@ export function RiskManagementPage() {
           onChange={(e) => { setStatusFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All statuses</option>
+          <option value="">Todos los estados</option>
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -284,7 +284,7 @@ export function RiskManagementPage() {
           onChange={(e) => { setRiskTypeFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All types</option>
+          <option value="">Todos los tipos</option>
           {RISK_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -292,7 +292,7 @@ export function RiskManagementPage() {
       </div>
 
       {loading ? (
-        <div className="text-center text-sm text-gray-500">Loading...</div>
+        <div className="text-center text-sm text-slate-500">Cargando...</div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
@@ -300,10 +300,9 @@ export function RiskManagementPage() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Code</th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Owner</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Tipo</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -337,7 +336,7 @@ export function RiskManagementPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">{selectedRisk.title}</h2>
-            <button onClick={() => setSelectedRisk(null)} className="text-sm text-gray-500 hover:text-gray-700">Close</button>
+            <button onClick={() => setSelectedRisk(null)} className="text-sm text-slate-500 hover:text-slate-700">Cerrar</button>
           </div>
           <div className="mt-4 flex gap-2 border-b border-gray-200">
             {(['details', 'assessments', 'controls', 'treatments'] as Tab[]).map((tab) => (
@@ -357,8 +356,8 @@ export function RiskManagementPage() {
             <div className="mt-4 space-y-2 text-sm text-gray-700">
               <p><span className="font-medium">Code:</span> {selectedRisk.code}</p>
               <p><span className="font-medium">Description:</span> {selectedRisk.description}</p>
-              <p><span className="font-medium">Type:</span> {selectedRisk.riskType}</p>
-              <p><span className="font-medium">Status:</span> {selectedRisk.status}</p>
+              <p><span className="font-medium">Tipo:</span> {selectedRisk.riskType}</p>
+              <p><span className="font-medium">Estado:</span> {selectedRisk.status}</p>
               <p><span className="font-medium">Created:</span> {new Date(selectedRisk.createdAt).toLocaleString()}</p>
             </div>
           )}

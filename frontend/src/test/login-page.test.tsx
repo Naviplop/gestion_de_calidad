@@ -17,7 +17,7 @@ describe('LoginPage', () => {
     renderWithRouter(<LoginPage />);
 
     expect(screen.getByText('QMS Platform')).toBeDefined();
-    expect(screen.getByText('Sign in to your account')).toBeDefined();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeDefined();
+    expect(screen.getByText('Inicia sesión en tu cuenta')).toBeDefined();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeDefined();
   });
 });

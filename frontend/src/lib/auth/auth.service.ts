@@ -346,6 +346,12 @@ export class AuthApiClient {
     this.accessToken = token;
   }
 
+  private getCsrfToken(): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    const match = document.cookie.match(/(?:^|; )x-csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : undefined;
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers = new Headers({
       'Content-Type': 'application/json',
@@ -354,6 +360,14 @@ export class AuthApiClient {
 
     if (this.accessToken) {
       headers.set('Authorization', `Bearer ${this.accessToken}`);
+    }
+
+    const method = options.method || 'GET';
+    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) {
+        headers.set('X-CSRF-Token', csrfToken);
+      }
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -374,7 +388,10 @@ export class AuthApiClient {
       const error = await response.json().catch(() => ({
         error: { message: 'Unknown error' },
       }));
-      throw new Error(error.error?.message || `HTTP ${response.status}`);
+      const message = typeof error.error?.message === 'string'
+        ? error.error.message
+        : error.error?.message?.message || `HTTP ${response.status}`;
+      throw new Error(message);
     }
 
     if (response.status === 204) {
@@ -395,6 +412,14 @@ export class AuthApiClient {
       headers.set('Authorization', `Bearer ${this.accessToken}`);
     }
 
+    const method = options.method || 'GET';
+    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) {
+        headers.set('X-CSRF-Token', csrfToken);
+      }
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
@@ -413,14 +438,20 @@ export class AuthApiClient {
       const error = await response.json().catch(() => ({
         error: { message: 'Conflict' },
       }));
-      throw new Error(error.error?.message || 'CONCURRENT_UPDATE');
+      const message = typeof error.error?.message === 'string'
+        ? error.error.message
+        : error.error?.message?.message || 'CONCURRENT_UPDATE';
+      throw new Error(message);
     }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
         error: { message: 'Unknown error' },
       }));
-      throw new Error(error.error?.message || `HTTP ${response.status}`);
+      const message = typeof error.error?.message === 'string'
+        ? error.error.message
+        : error.error?.message?.message || `HTTP ${response.status}`;
+      throw new Error(message);
     }
 
     if (response.status === 204) {

@@ -12,9 +12,9 @@ export function SecuritySettingsPage() {
   if (!accessToken) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Security Settings</h1>
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-gray-500">Loading security settings...</p>
+        <h1 className="mb-6 text-xl font-semibold text-slate-900">Configuración de seguridad</h1>
+        <div className="rounded-lg border border-slate-200 bg-white p-6">
+          <p className="text-sm text-slate-500">Cargando configuración de seguridad...</p>
         </div>
       </div>
     );
@@ -22,9 +22,9 @@ export function SecuritySettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Security Settings</h1>
+       <h1 className="mb-6 text-xl font-semibold text-slate-900">Configuración de seguridad</h1>
 
-      <div className="mb-4 border-b border-gray-200">
+      <div className="mb-4 border-b border-slate-200">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setTab('mfa')}
@@ -44,7 +44,7 @@ export function SecuritySettingsPage() {
                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
             }`}
           >
-            Password
+            Contraseña
           </button>
           <button
             onClick={() => setTab('recovery')}
@@ -54,7 +54,7 @@ export function SecuritySettingsPage() {
                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
             }`}
           >
-            Recovery
+            Recuperación
           </button>
         </nav>
       </div>
@@ -108,7 +108,7 @@ function MfaTab() {
       setSecret(data.data.secret);
       setProvisioningUri(data.data.provisioningUri);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to setup MFA';
+      const message = err instanceof Error ? err.message : 'Error al configurar MFA';
       setError(message);
     } finally {
       setLoading(false);
@@ -121,13 +121,13 @@ function MfaTab() {
     setError(null);
     try {
       await authApiClientWithEvents.verifyMfaSetup(mfaCode);
-      showToast('MFA enabled successfully', 'success');
+      showToast('MFA habilitado correctamente', 'success');
       setSecret(null);
       setProvisioningUri(null);
       setMfaCode('');
       loadStatus();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Invalid code';
+      const message = err instanceof Error ? err.message : 'Código inválido';
       setError(message);
     } finally {
       setLoading(false);
@@ -141,13 +141,13 @@ function MfaTab() {
     setError(null);
     try {
       await authApiClientWithEvents.disableMfa(disablePassword, disableMfaCode || undefined);
-      showToast('MFA disabled', 'success');
+      showToast('MFA deshabilitado', 'success');
       setShowDisableForm(false);
       setDisablePassword('');
       setDisableMfaCode('');
       loadStatus();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to disable MFA';
+      const message = err instanceof Error ? err.message : 'Error al deshabilitar MFA';
       setError(message);
     } finally {
       setLoading(false);
@@ -161,10 +161,10 @@ function MfaTab() {
     try {
       const data = await authApiClientWithEvents.generateRecoveryCodes();
       setRecoveryCodes(data.data.codes);
-      showToast('Recovery codes generated. Save them now.', 'success');
+      showToast('Códigos de recuperación generados. Guárdelos ahora.', 'success');
       loadStatus();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to generate recovery codes';
+      const message = err instanceof Error ? err.message : 'Error al generar los códigos de recuperación';
       setError(message);
     } finally {
       setLoading(false);
@@ -181,7 +181,7 @@ function MfaTab() {
           disabled={loading}
           className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
         >
-          Enable MFA
+          Habilitar MFA
         </button>
       )}
 
@@ -189,7 +189,7 @@ function MfaTab() {
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-sm text-gray-700">
-              Scan this QR code with your authenticator app, or enter the secret manually:
+              Escanee este código QR con su aplicación de autenticación o ingrese el secreto manualmente:
             </p>
             <div className="rounded-md bg-gray-50 p-3">
               <code className="text-xs break-all">{secret}</code>
@@ -198,7 +198,7 @@ function MfaTab() {
               <div className="mt-2">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(provisioningUri)}`}
-                  alt="MFA QR Code"
+                  alt="Código QR de MFA"
                   className="rounded-md border border-gray-200"
                 />
               </div>
@@ -207,7 +207,7 @@ function MfaTab() {
 
           <div>
             <label htmlFor="mfaCode" className="block text-sm font-medium text-gray-700">
-              Enter verification code
+              Ingrese el código de verificación
             </label>
             <input
               id="mfaCode"
@@ -224,17 +224,17 @@ function MfaTab() {
             disabled={loading}
             className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
           >
-            Verify and Enable
+            Verificar y Habilitar
           </button>
         </div>
       )}
 
       {status?.enabled && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-700">MFA is enabled for your account.</p>
+          <p className="text-sm text-gray-700">MFA está habilitado para su cuenta.</p>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Recovery codes</h3>
+            <h3 className="text-sm font-medium text-gray-900">Códigos de recuperación</h3>
             <p className="text-sm text-gray-500">
               You have {status.recoveryCodesCount} unused recovery code{status.recoveryCodesCount === 1 ? '' : 's'}.
             </p>
@@ -243,13 +243,13 @@ function MfaTab() {
               disabled={loading}
               className="mt-2 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
-              Regenerate recovery codes
+              Regenerar códigos de recuperación
             </button>
           </div>
 
           {recoveryCodes && (
             <div className="rounded-md bg-gray-50 p-3">
-              <p className="mb-2 text-xs font-medium text-gray-700">Save these codes. They will not be shown again.</p>
+              <p className="mb-2 text-xs font-medium text-gray-700">Guarde estos códigos. No se mostrarán de nuevo.</p>
               <div className="grid grid-cols-2 gap-2">
                 {recoveryCodes.map((code) => (
                   <code key={code} className="rounded bg-white px-2 py-1 text-xs">
@@ -262,9 +262,9 @@ function MfaTab() {
 
           {showDisableForm ? (
             <form onSubmit={handleDisable} className="mt-4 space-y-4 rounded-md border border-red-200 bg-red-50 p-4">
-              <h4 className="text-sm font-medium text-red-800">Confirm MFA Disable</h4>
+              <h4 className="text-sm font-medium text-red-800">Confirmar Deshabilitación de MFA</h4>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Current password</label>
+                <label className="block text-sm font-medium text-gray-700">Contraseña actual</label>
                 <input
                   type="password"
                   value={disablePassword}
@@ -274,7 +274,7 @@ function MfaTab() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Current MFA code</label>
+                <label className="block text-sm font-medium text-gray-700">Código MFA actual</label>
                 <input
                   type="text"
                   value={disableMfaCode}
@@ -290,24 +290,24 @@ function MfaTab() {
                   disabled={loading}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                 >
-                  {loading ? 'Disabling...' : 'Confirm Disable'}
+                  {loading ? 'Deshabilitando...' : 'Confirmar Deshabilitación'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowDisableForm(false); setDisablePassword(''); setDisableMfaCode(''); }}
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => setShowDisableForm(true)}
-              disabled={loading}
-              className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
-            >
-              Disable MFA
+              Cancelar
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          onClick={() => setShowDisableForm(true)}
+          disabled={loading}
+          className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+        >
+          Deshabilitar MFA
             </button>
           )}
         </div>
@@ -331,11 +331,11 @@ function PasswordTab() {
     setError(null);
     try {
       await authApiClientWithEvents.changePassword(currentPassword, newPassword);
-      showToast('Password changed successfully', 'success');
+      showToast('Contraseña cambiada correctamente', 'success');
       setCurrentPassword('');
       setNewPassword('');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to change password';
+      const message = err instanceof Error ? err.message : 'Error al cambiar la contraseña';
       setError(message);
     } finally {
       setLoading(false);
@@ -348,7 +348,7 @@ function PasswordTab() {
 
       <div>
         <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
-          Current password
+          Contraseña actual
         </label>
         <input
           id="currentPassword"
@@ -362,7 +362,7 @@ function PasswordTab() {
 
       <div>
         <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
-          New password
+          Contraseña nueva
         </label>
         <input
           id="newPassword"
@@ -379,7 +379,7 @@ function PasswordTab() {
         disabled={loading}
         className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
       >
-        {loading ? 'Saving...' : 'Change password'}
+        {loading ? 'Guardando...' : 'Cambiar contraseña'}
       </button>
     </form>
   );
@@ -402,10 +402,10 @@ function RecoveryTab() {
     setError(null);
     try {
       await authApiClientWithEvents.requestPasswordReset(email);
-      showToast('If the account exists, reset instructions will be sent.', 'success');
+      showToast('Si la cuenta existe, se enviarán las instrucciones de restablecimiento.', 'success');
       setSent(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to request password reset';
+      const message = err instanceof Error ? err.message : 'Error al solicitar el restablecimiento de contraseña';
       setError(message);
     } finally {
       setLoading(false);
@@ -419,12 +419,12 @@ function RecoveryTab() {
     setError(null);
     try {
       await authApiClientWithEvents.resetPassword(token, newPassword);
-      showToast('Password reset successfully', 'success');
+      showToast('Contraseña restablecida correctamente', 'success');
       setToken('');
       setNewPassword('');
       setSent(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to reset password';
+      const message = err instanceof Error ? err.message : 'Error al restablecer la contraseña';
       setError(message);
     } finally {
       setLoading(false);
@@ -438,7 +438,7 @@ function RecoveryTab() {
       <form onSubmit={handleRequest} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
+            Correo electrónico
           </label>
           <input
             id="email"
@@ -455,7 +455,7 @@ function RecoveryTab() {
           disabled={loading}
           className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
         >
-          {loading ? 'Sending...' : 'Request reset'}
+          {loading ? 'Enviando...' : 'Solicitar restablecimiento'}
         </button>
       </form>
 
@@ -463,7 +463,7 @@ function RecoveryTab() {
         <form onSubmit={handleReset} className="space-y-4">
           <div>
             <label htmlFor="token" className="block text-sm font-medium text-gray-700">
-              Reset token
+              Token de restablecimiento
             </label>
             <input
               id="token"
@@ -477,7 +477,7 @@ function RecoveryTab() {
 
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
-              New password
+              Contraseña nueva
             </label>
             <input
               id="newPassword"
@@ -494,7 +494,7 @@ function RecoveryTab() {
             disabled={loading}
             className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
           >
-            {loading ? 'Resetting...' : 'Reset password'}
+            {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
           </button>
         </form>
       )}

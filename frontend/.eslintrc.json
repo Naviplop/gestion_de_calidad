@@ -10,5 +10,6 @@
     "ecmaFeatures": {
       "jsx": true
     }
-  }
+  },
+  "ignorePatterns": ["src/e2e/*"]
 }

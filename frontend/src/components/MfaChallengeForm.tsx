@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { authApiClientWithEvents } from '../lib/auth/auth-security';
 
 interface MfaChallengeFormProps {
   sessionId: string;
@@ -9,62 +7,62 @@ interface MfaChallengeFormProps {
 
 export function MfaChallengeForm({ sessionId, onSuccess }: MfaChallengeFormProps) {
   const [code, setCode] = useState('');
-  const [localError, setLocalError] = useState<string | null>(null);
-  const setLoading = useAuth((state) => state.setLoading);
-  const setError = useAuth((state) => state.setError);
-  const clearError = useAuth((state) => state.clearError);
-  const isLoading = useAuth((state) => state.isLoading);
-  const error = useAuth((state) => state.error);
-  const completeMfaLogin = useAuth((state) => state.completeMfaLogin);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
-    setLocalError(null);
+    setError(null);
     setLoading(true);
 
     try {
-      const response = await authApiClientWithEvents.verifyMfa(sessionId, code);
-      completeMfaLogin(response.data.accessToken, response.data.user);
+      const response = await fetch('/api/v1/auth/mfa/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, code }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Código inválido');
+      }
+
       onSuccess();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'MFA verification failed';
-      setError(message);
-      setLocalError(message);
+      setError(err instanceof Error ? err.message : 'Error en la verificación de MFA');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="mfaCode" className="block text-sm font-medium text-gray-700">
-          Verification code
+        <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-slate-700">
+          Código de verificación
         </label>
         <input
-          id="mfaCode"
+          id="code"
           type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          required
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm tracking-widest transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
           placeholder="123456"
+          maxLength={6}
         />
       </div>
 
-      {(error || localError) && (
-        <p className="text-sm text-red-600">{error || localError}</p>
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
       )}
 
       <button
         type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+        disabled={loading}
+        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {isLoading ? 'Verifying...' : 'Verify'}
+        {loading ? 'Verificando...' : 'Verificar'}
       </button>
     </form>
   );

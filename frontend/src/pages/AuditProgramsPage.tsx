@@ -31,7 +31,7 @@ export function AuditProgramsPage() {
       setPrograms(response.data);
       setMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit programs');
+      setError(err instanceof Error ? err.message : 'Error al cargar los programas de auditoría');
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export function AuditProgramsPage() {
       setShowCreateModal(false);
       loadPrograms();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create audit program');
+      setError(err instanceof Error ? err.message : 'Error al crear el programa de auditoría');
     }
   };
 
@@ -86,7 +86,7 @@ export function AuditProgramsPage() {
       });
       setAudits(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audits');
+      setError(err instanceof Error ? err.message : 'Error al cargar las auditorías');
     }
   };
 
@@ -97,7 +97,7 @@ export function AuditProgramsPage() {
       setDetailTab('details');
       loadAudits(programId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit program detail');
+      setError(err instanceof Error ? err.message : 'Error al cargar el detalle del programa de auditoría');
     }
   };
 
@@ -123,7 +123,7 @@ export function AuditProgramsPage() {
       }
       loadPrograms();
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${action} audit program`);
+      setError(err instanceof Error ? err.message : `Error al ${action} el programa de auditoría`);
     } finally {
       setActionLoading(null);
     }
@@ -143,16 +143,16 @@ export function AuditProgramsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Audit Programs</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Programas de Auditoría</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage audit programs for your organization.
+            Gestione los programas de auditoría de su organización.
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
         >
-          Create Audit Program
+          Crear Programa de Auditoría
         </button>
       </div>
 
@@ -165,7 +165,7 @@ export function AuditProgramsPage() {
       <div className="flex gap-4">
         <input
           type="text"
-          placeholder="Search audit programs..."
+          placeholder="Buscar programas de auditoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -176,32 +176,32 @@ export function AuditProgramsPage() {
           onChange={(e) => handleStatusFilter(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All statuses</option>
-          <option value="PLANNED">Planned</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
+          <option value="">Todos los estados</option>
+          <option value="PLANNED">Planificado</option>
+          <option value="IN_PROGRESS">En Progreso</option>
+          <option value="COMPLETED">Completado</option>
+          <option value="CANCELLED">Cancelado</option>
         </select>
         <button
           onClick={handleSearch}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
         >
-          Search
+          Buscar
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center text-sm text-gray-500">Loading...</div>
+        <div className="text-center text-sm text-gray-500">Cargando...</div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Period</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Responsible</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
+                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Nombre</th>
+                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Período</th>
+                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
+                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Responsable</th>
+                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -234,7 +234,7 @@ export function AuditProgramsPage() {
                           disabled={actionLoading === 'start'}
                           className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
                         >
-                          Start
+                          Iniciar
                         </button>
                       )}
                       {program.status === 'IN_PROGRESS' && (
@@ -244,14 +244,14 @@ export function AuditProgramsPage() {
                             disabled={actionLoading === 'complete'}
                             className="text-green-600 hover:text-green-800 disabled:opacity-50"
                           >
-                            Complete
+                            Completar
                           </button>
                           <button
                             onClick={() => handleLifecycleAction('cancel', program.id)}
                             disabled={actionLoading === 'cancel'}
                             className="text-red-600 hover:text-red-800 disabled:opacity-50"
                           >
-                            Cancel
+                            Cancelar
                           </button>
                         </>
                       )}
@@ -267,10 +267,10 @@ export function AuditProgramsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Create Audit Program</h2>
+            <h2 className="text-lg font-semibold">Crear Programa de Auditoría</h2>
             <form onSubmit={handleCreate} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <label className="block text-sm font-medium text-gray-700">Nombre</label>
                 <input
                   type="text"
                   name="name"
@@ -279,7 +279,7 @@ export function AuditProgramsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
                 <textarea
                   name="description"
                   rows={3}
@@ -288,7 +288,7 @@ export function AuditProgramsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Period Start</label>
+                  <label className="block text-sm font-medium text-gray-700">Inicio del Período</label>
                   <input
                     type="date"
                     name="periodStart"
@@ -297,7 +297,7 @@ export function AuditProgramsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Period End</label>
+                  <label className="block text-sm font-medium text-gray-700">Fin del Período</label>
                   <input
                     type="date"
                     name="periodEnd"
@@ -317,13 +317,13 @@ export function AuditProgramsPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
                 >
-                  Create
+                  Crear
                 </button>
               </div>
             </form>
@@ -340,7 +340,7 @@ export function AuditProgramsPage() {
                 onClick={() => setSelectedProgram(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                Close
+                Cerrar
               </button>
             </div>
             <div className="mt-4 flex gap-4 border-b border-gray-200">
@@ -348,21 +348,21 @@ export function AuditProgramsPage() {
                 onClick={() => setDetailTab('details')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Details
+                Detalles
               </button>
               <button
                 onClick={() => setDetailTab('audits')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'audits' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Audits
+                Auditorías
               </button>
             </div>
             <div className="mt-4">
               {detailTab === 'details' && (
                 <div className="space-y-2 text-sm">
-                  <p><strong>Description:</strong> {selectedProgram.description || '-'}</p>
-                  <p><strong>Period:</strong> {selectedProgram.periodStart} - {selectedProgram.periodEnd}</p>
-                  <p><strong>Status:</strong> {selectedProgram.status}</p>
+                  <p><strong>Descripción:</strong> {selectedProgram.description || '-'}</p>
+                  <p><strong>Período:</strong> {selectedProgram.periodStart} - {selectedProgram.periodEnd}</p>
+                  <p><strong>Estado:</strong> {selectedProgram.status}</p>
                 </div>
               )}
               {detailTab === 'audits' && (
@@ -374,7 +374,7 @@ export function AuditProgramsPage() {
                     </div>
                   ))}
                   {audits.length === 0 && (
-                    <div className="text-sm text-gray-500">No audits found.</div>
+                    <div className="text-sm text-gray-500">No se encontraron auditorías.</div>
                   )}
                 </div>
               )}

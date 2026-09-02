@@ -6,9 +6,9 @@ describe('LoginForm', () => {
   it('should render email and password fields', () => {
     render(<LoginForm onSubmit={vi.fn()} isLoading={false} error={null} />);
 
-    expect(screen.getByLabelText(/email/i)).toBeDefined();
-    expect(screen.getByLabelText(/password/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeDefined();
+    expect(screen.getByLabelText(/correo electrónico/i)).toBeDefined();
+    expect(screen.getByLabelText(/contraseña/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeDefined();
   });
 
   it('should display error message', () => {
@@ -20,6 +20,6 @@ describe('LoginForm', () => {
   it('should disable button when loading', () => {
     render(<LoginForm onSubmit={vi.fn()} isLoading={true} error={null} />);
 
-    expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /verificando/i })).toBeDisabled();
   });
 });

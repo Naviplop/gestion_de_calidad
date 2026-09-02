@@ -26,7 +26,7 @@ export function OrganizationSettingsPage() {
       setOrg(orgRes.data);
       setSettings(settingsRes.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load organization');
+      setError(err instanceof Error ? err.message : 'Error al cargar la organización');
     } finally {
       setLoading(false);
     }
@@ -48,9 +48,9 @@ export function OrganizationSettingsPage() {
         logoUrl: org.logoUrl,
         primaryColor: org.primaryColor,
       });
-      showToast('Organization updated', 'success');
+      showToast('Organización actualizada', 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update organization');
+      setError(err instanceof Error ? err.message : 'Error al actualizar la organización');
     } finally {
       setSaving(false);
     }
@@ -64,9 +64,9 @@ export function OrganizationSettingsPage() {
         data[setting.key] = setting.value;
       }
       await authApiClient.updateSettings(data);
-      showToast('Settings updated', 'success');
+      showToast('Configuración actualizada', 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update settings');
+      setError(err instanceof Error ? err.message : 'Error al actualizar la configuración');
     } finally {
       setSaving(false);
     }
@@ -75,7 +75,7 @@ export function OrganizationSettingsPage() {
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-sm text-gray-600">Loading...</div>
+        <div className="text-sm text-gray-600">Cargando...</div>
       </div>
     );
   }
@@ -83,14 +83,14 @@ export function OrganizationSettingsPage() {
   if (!org) {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-sm text-red-600">{error || 'Organization not found'}</div>
+        <div className="text-sm text-red-600">{error || 'Organización no encontrada'}</div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Configuración de la Organización</h1>
 
       {error && (
         <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -99,10 +99,10 @@ export function OrganizationSettingsPage() {
       )}
 
       <form onSubmit={handleSaveOrg} className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">General Information</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Información General</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
             <input
               type="text"
               value={org.name}
@@ -111,7 +111,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Tax ID</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Identificación Fiscal</label>
             <input
               type="text"
               value={org.taxId || ''}
@@ -120,7 +120,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Correo electrónico</label>
             <input
               type="email"
               value={org.email || ''}
@@ -129,7 +129,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Teléfono</label>
             <input
               type="text"
               value={org.phone || ''}
@@ -138,7 +138,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Address</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Dirección</label>
             <textarea
               value={org.address || ''}
               onChange={(e) => setOrg({ ...org, address: e.target.value })}
@@ -147,7 +147,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Timezone</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Zona Horaria</label>
             <input
               type="text"
               value={org.timezone}
@@ -156,7 +156,7 @@ export function OrganizationSettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Locale</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Configuración Regional</label>
             <input
               type="text"
               value={org.locale}
@@ -171,13 +171,13 @@ export function OrganizationSettingsPage() {
             disabled={saving}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save Organization'}
+            {saving ? 'Guardando...' : 'Guardar Organización'}
           </button>
         </div>
       </form>
 
       <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Settings</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Configuración</h2>
         <div className="mt-4 space-y-4">
           {settings.map((setting) => (
             <div key={setting.key} className="flex items-center justify-between">
@@ -202,7 +202,7 @@ export function OrganizationSettingsPage() {
             disabled={saving}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? 'Guardando...' : 'Guardar Configuración'}
           </button>
         </div>
       </div>

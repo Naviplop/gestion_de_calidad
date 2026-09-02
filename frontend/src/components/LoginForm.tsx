@@ -16,44 +16,44 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
     setLocalError(null);
 
     if (!email || !password) {
-      setLocalError('Email and password are required.');
+      setLocalError('El correo electrónico y la contraseña son obligatorios.');
       return;
     }
 
     try {
       await onSubmit(email, password);
     } catch {
-      setLocalError('Invalid credentials.');
+      setLocalError('Credenciales inválidas.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-          Email
+        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+          Correo electrónico
         </label>
         <input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          placeholder="user@example.com"
+          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+          placeholder="usuario@empresa.com"
           autoComplete="email"
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-          Password
+        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+          Contraseña
         </label>
         <input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
           placeholder="••••••••••••"
           autoComplete="current-password"
         />
@@ -68,9 +68,9 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {isLoading ? 'Signing in...' : 'Sign in'}
+        {isLoading ? 'Verificando...' : 'Iniciar sesión'}
       </button>
     </form>
   );

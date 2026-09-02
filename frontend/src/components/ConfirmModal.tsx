@@ -14,21 +14,21 @@ export function ConfirmModal({ action, resourceCode, resourceType, onConfirm, on
   };
 
   const config = defaultMessages[action] || {
-    title: 'Confirm action',
-    message: resourceType ? `${resourceType}: Are you sure you want to ${action} "${resourceCode}"?` : `Are you sure you want to ${action} "${resourceCode}"?`,
+    title: 'Confirmar acción',
+    message: resourceType ? `¿Está seguro de que desea ${action} "${resourceCode}"?` : `¿Está seguro de que desea ${action} "${resourceCode}"?`,
     confirmText: action,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">{config.title}</h3>
-        <p className="mt-2 text-sm text-gray-500">{config.message}</p>
+        <h3 className="text-base font-semibold text-slate-900">{config.title}</h3>
+        <p className="mt-2 text-sm text-slate-500">{config.message}</p>
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Cancel
+          <button type="button" onClick={onCancel} className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Cancelar
           </button>
-          <button onClick={onConfirm} className={`rounded-md px-4 py-2 text-sm font-medium text-white ${confirmButtonClassName}`}>
+          <button onClick={onConfirm} className={`rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm ${confirmButtonClassName}`}>
             {config.confirmText}
           </button>
         </div>

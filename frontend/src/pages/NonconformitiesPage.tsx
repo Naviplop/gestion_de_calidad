@@ -87,7 +87,7 @@ export function NonconformitiesPage() {
         responsibleId: responsibleId || undefined,
       });
       setShowCreateModal(false);
-      showToast('Nonconformity created successfully', 'success');
+      showToast('No conformidad creada exitosamente', 'success');
       loadNonconformities();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to create nonconformity');
@@ -141,7 +141,7 @@ export function NonconformitiesPage() {
     setActionLoading('close');
     try {
       await authApiClient.closeNonconformity(ncId);
-      showToast('Nonconformity closed successfully', 'success');
+      showToast('No conformidad cerrada exitosamente', 'success');
       if (selectedNonconformity && selectedNonconformity.id === ncId) {
         const updated = await authApiClient.getNonconformity(ncId);
         setSelectedNonconformity(updated.data);
@@ -187,16 +187,16 @@ export function NonconformitiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Nonconformities</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">No conformidades</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage nonconformities and corrective actions.
+            Gestiona no conformidades y acciones correctivas.
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
         >
-          Create Nonconformity
+          Crear no conformidad
         </button>
       </div>
 
@@ -209,7 +209,7 @@ export function NonconformitiesPage() {
       <div className="flex gap-4">
         <input
           type="text"
-          placeholder="Search nonconformities..."
+          placeholder="Buscar no conformidades..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -220,31 +220,31 @@ export function NonconformitiesPage() {
           onChange={(e) => handleStatusFilter(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All statuses</option>
-          <option value="OPEN">Open</option>
-          <option value="VERIFICATION">Verification</option>
-          <option value="CLOSED">Closed</option>
+        <option value="">Todos los estados</option>
+        <option value="OPEN">Abierta</option>
+        <option value="VERIFICATION">Verificación</option>
+        <option value="CLOSED">Cerrada</option>
         </select>
         <select
           value={severityFilter}
           onChange={(e) => handleSeverityFilter(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">All severities</option>
-          <option value="MAJOR">Major</option>
-          <option value="MINOR">Minor</option>
-          <option value="CRITICAL">Critical</option>
+        <option value="">Todas las severidades</option>
+        <option value="MAJOR">Mayor</option>
+        <option value="MINOR">Menor</option>
+        <option value="CRITICAL">Crítica</option>
         </select>
         <button
           onClick={handleSearch}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
         >
-          Search
+          Buscar
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center text-sm text-gray-500">Loading...</div>
+        <div className="text-center text-sm text-slate-500">Cargando...</div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
@@ -252,9 +252,9 @@ export function NonconformitiesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Severity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Severidad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -288,10 +288,10 @@ export function NonconformitiesPage() {
                         disabled={actionLoading === 'close'}
                         className="text-green-600 hover:text-green-800 disabled:opacity-50"
                       >
-                        {actionLoading === 'close' ? 'Closing...' : 'Close'}
+                        {actionLoading === 'close' ? 'Cerrando...' : 'Cerrar'}
                       </button>
                     ) : (
-                      <span className="text-xs text-gray-400">Closed</span>
+                      <span className="text-xs text-slate-400">Cerrada</span>
                     )}
                   </td>
                 </tr>
@@ -304,7 +304,7 @@ export function NonconformitiesPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Create Nonconformity</h2>
+            <h2 className="text-lg font-semibold">Crear no conformidad</h2>
             <form onSubmit={handleCreate} className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Code</label>
@@ -335,7 +335,7 @@ export function NonconformitiesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Severity</label>
+                  <label className="block text-sm font-medium text-slate-700">Severidad</label>
                   <select
                     name="severity"
                     required
@@ -367,13 +367,13 @@ export function NonconformitiesPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
                 >
-                  Create
+                  Crear
                 </button>
               </div>
             </form>
@@ -390,7 +390,7 @@ export function NonconformitiesPage() {
                 onClick={() => setSelectedNonconformity(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                Close
+                Cerrar
               </button>
             </div>
             <div className="mt-4 flex gap-4 border-b border-gray-200">
@@ -398,19 +398,19 @@ export function NonconformitiesPage() {
                 onClick={() => setDetailTab('details')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Details
+                Detalles
               </button>
               <button
                 onClick={() => setDetailTab('root-cause')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'root-cause' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Root Cause
+                Causa raíz
               </button>
               <button
                 onClick={() => setDetailTab('actions')}
                 className={`pb-2 text-sm font-medium ${detailTab === 'actions' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
               >
-                Corrective Actions
+                Acciones correctivas
               </button>
             </div>
             <div className="mt-4">
@@ -419,8 +419,8 @@ export function NonconformitiesPage() {
                   <p><strong>Code:</strong> {selectedNonconformity.code}</p>
                   <p><strong>Title:</strong> {selectedNonconformity.title}</p>
                   <p><strong>Description:</strong> {selectedNonconformity.description}</p>
-                  <p><strong>Severity:</strong> {selectedNonconformity.severity}</p>
-                  <p><strong>Status:</strong> {selectedNonconformity.status}</p>
+                  <p><strong>Severidad:</strong> {selectedNonconformity.severity}</p>
+                  <p><strong>Estado:</strong> {selectedNonconformity.status}</p>
                   <p><strong>Detected At:</strong> {selectedNonconformity.detectedAt ? new Date(selectedNonconformity.detectedAt).toLocaleDateString() : '-'}</p>
                 </div>
               )}
@@ -461,7 +461,7 @@ export function NonconformitiesPage() {
                   disabled={actionLoading === 'close'}
                   className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
                 >
-                  {actionLoading === 'close' ? 'Closing...' : 'Close Nonconformity'}
+                  {actionLoading === 'close' ? 'Cerrando...' : 'Cerrar no conformidad'}
                 </button>
               )}
             </div>
@@ -479,9 +479,9 @@ export function NonconformitiesPage() {
           confirmButtonClassName="bg-green-600 hover:bg-green-500"
           messages={{
             close: {
-              title: 'Close nonconformity?',
+              title: '¿Cerrar no conformidad?',
               message: `This will close "${selectedNonconformity?.code || 'this nonconformity'}". Ensure all root cause analyses are completed and corrective actions are verified.`,
-              confirmText: 'Close',
+              confirmText: 'Cerrar',
             },
           }}
         />

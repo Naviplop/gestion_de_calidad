@@ -20,5 +20,6 @@
     }
   },
   "include": ["src"],
+  "exclude": ["src/e2e", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

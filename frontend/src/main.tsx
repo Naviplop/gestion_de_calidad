@@ -17,29 +17,25 @@ const queryClient = new QueryClient({
 });
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
-  const setLoading = useAuth((state) => state.setLoading);
   const accessToken = useAuth((state) => state.accessToken);
 
   React.useEffect(() => {
-    setLoading(false);
     if (accessToken) {
       authApiClientWithEvents.setAccessToken(accessToken);
     }
-  }, [setLoading, accessToken]);
+  }, [accessToken]);
 
   return <>{children}</>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <AuthInitializer>
-            <App />
-          </AuthInitializer>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <AuthProvider>
+        <AuthInitializer>
+          <App />
+        </AuthInitializer>
+      </AuthProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
 );

@@ -16,16 +16,16 @@ describe('Foundation - Frontend App Shell', () => {
   it('should render login form when not authenticated', () => {
     renderWithRouter(<App />);
     expect(screen.getByText('QMS Platform')).toBeDefined();
-    expect(screen.getByText('Sign in to your account')).toBeDefined();
+    expect(screen.getByText('Inicia sesión en tu cuenta')).toBeDefined();
   });
 
   it('should render sign in button', () => {
     renderWithRouter(<App />);
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeDefined();
   });
 
   it('should render footer with enterprise label', () => {
     renderWithRouter(<App />);
-    expect(screen.getByText('Quality Management System — Enterprise')).toBeDefined();
+    expect(screen.getByText('Sistema de Gestión de Calidad — Enterprise')).toBeDefined();
   });
 });

@@ -71,7 +71,7 @@ async function bootstrap() {
     app.use(new HttpLoggingMiddleware().use);
     app.use(errorHandlerMiddleware);
     app.use(cookieParser());
-    app.use(new CsrfMiddleware().use);
+    app.use(new CsrfMiddleware().use.bind(new CsrfMiddleware()));
     app.useGlobalInterceptors(new ResponseEnvelopeInterceptor(), new RequestIdInterceptor(), new CorrelationIdInterceptor());
     app.setGlobalPrefix('api/v1');
     const port = parseInt(process.env.PORT || '3001', 10);

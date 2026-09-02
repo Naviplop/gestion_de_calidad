@@ -24,7 +24,7 @@ export function DepartmentsPage() {
       setDepartments(response.data);
       setMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load departments');
+      setError(err instanceof Error ? err.message : 'Error al cargar los departamentos');
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export function DepartmentsPage() {
       setSelectedDepartment(null);
       loadDepartments();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to update department');
+      setFormError(err instanceof Error ? err.message : 'Error al actualizar el departamento');
     }
   };
 
@@ -87,19 +87,19 @@ export function DepartmentsPage() {
       await authApiClient.deactivateDepartment(id);
       loadDepartments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to deactivate department');
+      setError(err instanceof Error ? err.message : 'Error al desactivar el departamento');
     }
   };
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Departamentos</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
         >
-          Create Department
+          Crear Departamento
         </button>
       </div>
 
@@ -115,14 +115,14 @@ export function DepartmentsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Search departments..."
+          placeholder="Buscar departamentos..."
           className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
         <button
           onClick={handleSearch}
           className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
         >
-          Search
+          Buscar
         </button>
       </div>
 
@@ -130,23 +130,23 @@ export function DepartmentsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Parent</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Superior</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {loading ? (
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                  Loading...
+                   Cargando...
                 </td>
               </tr>
             ) : departments.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                  No departments found.
+                  No se encontraron departamentos.
                 </td>
               </tr>
             ) : (
@@ -156,7 +156,7 @@ export function DepartmentsPage() {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{dept.parentDepartmentName || '-'}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${dept.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {dept.isActive ? 'Active' : 'Inactive'}
+                      {dept.isActive ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
@@ -164,14 +164,14 @@ export function DepartmentsPage() {
                       onClick={() => authApiClient.getDepartment(dept.id).then(r => setSelectedDepartment(r.data))}
                       className="text-indigo-600 hover:text-indigo-900"
                     >
-                      Edit
+                      Editar
                     </button>
                     {dept.isActive && (
                       <button
                         onClick={() => handleDeactivate(dept.id)}
                         className="ml-4 text-red-600 hover:text-red-900"
                       >
-                        Deactivate
+                        Desactivar
                       </button>
                     )}
                   </td>
@@ -185,24 +185,24 @@ export function DepartmentsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold">Create Department</h2>
+            <h2 className="mb-4 text-lg font-semibold">Crear Departamento</h2>
             {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
             <form onSubmit={handleCreate}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <label className="block text-sm font-medium text-gray-700">Nombre</label>
                 <input name="name" required maxLength={150} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
                 <textarea name="description" maxLength={500} rows={3} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Parent Department ID</label>
+                <label className="block text-sm font-medium text-gray-700">ID del Departamento Superior</label>
                 <input name="parentDepartmentId" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { setShowCreateModal(false); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Create</button>
+                <button type="button" onClick={() => { setShowCreateModal(false); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Crear</button>
               </div>
             </form>
           </div>
@@ -212,27 +212,27 @@ export function DepartmentsPage() {
       {selectedDepartment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold">Edit Department</h2>
+            <h2 className="mb-4 text-lg font-semibold">Editar Departamento</h2>
             {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
             <form onSubmit={handleUpdate}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <label className="block text-sm font-medium text-gray-700">Nombre</label>
                 <input name="name" required maxLength={150} defaultValue={selectedDepartment.name} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
                 <textarea name="description" maxLength={500} rows={3} defaultValue={selectedDepartment.description || ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Active</label>
+                <label className="block text-sm font-medium text-gray-700">Activo</label>
                 <select name="isActive" defaultValue={selectedDepartment.isActive ? 'true' : 'false'} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
                 </select>
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { setSelectedDepartment(null); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Save</button>
+                <button type="button" onClick={() => { setSelectedDepartment(null); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Guardar</button>
               </div>
             </form>
           </div>
