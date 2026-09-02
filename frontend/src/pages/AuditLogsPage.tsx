@@ -1,10 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { AuditLogListItem, SecurityEventListItem } from '../lib/auth/auth.service';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Tabs } from '../components/ui/Tabs';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
+import { Modal } from '../components/ui/Modal';
 
 type Tab = 'audit-logs' | 'security-events';
 
-const SEVERITY_OPTIONS = ['', 'low', 'medium', 'high', 'critical'];
+const SEVERITY_VALUES: string[] = ['low', 'medium', 'high', 'critical'];
+void SEVERITY_VALUES;
 
 export function AuditLogsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('audit-logs');
@@ -89,339 +101,211 @@ export function AuditLogsPage() {
 
   const renderMetadata = (metadata: Record<string, unknown> | null) => {
     if (!metadata || Object.keys(metadata).length === 0) {
-      return <span className="text-gray-400">Ninguno</span>;
+      return <span className="text-slate-400">Ninguno</span>;
     }
     return (
-      <pre className="mt-1 max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-700">
+      <pre className="mt-1 max-h-40 overflow-auto rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700">
         {JSON.stringify(metadata, null, 2)}
       </pre>
     );
   };
 
+  const severityToStatus: Record<string, 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'DEFAULT'> = {
+    low: 'LOW',
+    medium: 'MEDIUM',
+    high: 'HIGH',
+    critical: 'CRITICAL',
+  };
+
   return (
-    <div className="mx-auto w-full max-w-7xl">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Auditoría y Seguridad</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Revise los registros de auditoría y eventos de seguridad de su organización.
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Registros y eventos"
+        description="Revise los registros de auditoría y eventos de seguridad de la organización."
+        breadcrumbs={[{ label: 'Sistema' }, { label: 'Auditoría' }]}
+      />
 
-      <div className="mb-4 border-b border-gray-200">
-        <nav className="-mb-px flex gap-4" aria-label="Tabs">
-          <button
-            type="button"
-            onClick={() => { setActiveTab('audit-logs'); setMeta((prev) => ({ ...prev, page: 1 })); }}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              activeTab === 'audit-logs'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            }`}
-          >
-            Registros de Auditoría
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab('security-events'); setMeta((prev) => ({ ...prev, page: 1 })); }}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              activeTab === 'security-events'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            }`}
-          >
-            Eventos de Seguridad
-          </button>
-        </nav>
-      </div>
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {activeTab === 'audit-logs' ? (
-            <>
-              <input
-                type="text"
-                placeholder="Acción"
-                value={actionFilter}
-                onChange={(e) => setActionFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Tipo de entidad"
-                value={entityTypeFilter}
-                onChange={(e) => setEntityTypeFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="ID de actor"
-                value={actorIdFilter}
-                onChange={(e) => setActorIdFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="ID de correlación"
-                value={correlationIdFilter}
-                onChange={(e) => setCorrelationIdFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </>
+        <div className="rounded-lg border border-slate-200 bg-white">
+          <div className="px-5 pt-4">
+            <Tabs
+              tabs={[
+                { id: 'audit-logs', label: 'Registros de auditoría' },
+                { id: 'security-events', label: 'Eventos de seguridad' },
+              ]}
+              activeTab={activeTab}
+              onChange={(t) => { setActiveTab(t as Tab); setMeta((prev) => ({ ...prev, page: 1 })); }}
+            />
+          </div>
+
+          <div className="border-b border-slate-200 px-5 py-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {activeTab === 'audit-logs' ? (
+                <>
+                  <Input value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} placeholder="Acción" />
+                  <Input value={entityTypeFilter} onChange={(e) => setEntityTypeFilter(e.target.value)} placeholder="Tipo de entidad" />
+                  <Input value={actorIdFilter} onChange={(e) => setActorIdFilter(e.target.value)} placeholder="ID de actor" />
+                  <Input value={correlationIdFilter} onChange={(e) => setCorrelationIdFilter(e.target.value)} placeholder="ID de correlación" />
+                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                  <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                </>
+              ) : (
+                <>
+                  <Input value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)} placeholder="Tipo de evento" />
+                  <Select
+                    value={severityFilter}
+                    onChange={(e) => setSeverityFilter(e.target.value)}
+                    options={[
+                      { value: '', label: 'Todas las severidades' },
+                      { value: 'low', label: 'Baja' },
+                      { value: 'medium', label: 'Media' },
+                      { value: 'high', label: 'Alta' },
+                      { value: 'critical', label: 'Crítica' },
+                    ]}
+                  />
+                  <Input value={actorIdFilter} onChange={(e) => setActorIdFilter(e.target.value)} placeholder="ID de actor" />
+                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                  <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                </>
+              )}
+              <Button onClick={handleSearch} leftIcon="search">Aplicar</Button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-5"><LoadingState message="Cargando..." /></div>
+          ) : activeTab === 'audit-logs' ? (
+            auditLogs.length === 0 ? (
+              <div className="p-5">
+                <EmptyState icon="clipboard" title="No hay registros" description="No se encontraron registros con los filtros aplicados." />
+              </div>
+            ) : (
+              <>
+                <Table
+                  rowKey={(l) => l.id}
+                  columns={[
+                    { key: 'action', header: 'Acción', render: (l) => <span className="font-mono text-xs text-slate-700">{l.action}</span> },
+                    { key: 'entity', header: 'Entidad', render: (l) => <span className="text-sm text-slate-700">{l.entityType}:{l.entityId.slice(0, 8)}</span> },
+                    { key: 'actor', header: 'Actor', render: (l) => l.actor?.email || l.actorId },
+                    { key: 'created', header: 'Fecha', render: (l) => new Date(l.createdAt).toLocaleString('es-ES') },
+                    {
+                      key: 'actions', header: '', align: 'right', width: '80px',
+                      render: (l) => <Button variant="ghost" size="sm" onClick={() => setSelectedAuditLog(l)}>Ver</Button>,
+                    },
+                  ]}
+                  data={auditLogs}
+                />
+                <Pagination
+                  page={meta.page}
+                  pageSize={meta.pageSize}
+                  total={meta.total}
+                  onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+                  className="rounded-b-lg"
+                />
+              </>
+            )
+          ) : securityEvents.length === 0 ? (
+            <div className="p-5">
+              <EmptyState icon="key" title="No hay eventos" description="No se encontraron eventos de seguridad con los filtros aplicados." />
+            </div>
           ) : (
             <>
-              <input
-                type="text"
-                placeholder="Tipo de evento"
-                value={eventTypeFilter}
-                onChange={(e) => setEventTypeFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              <Table
+                rowKey={(e) => e.id}
+                columns={[
+                  { key: 'type', header: 'Tipo de evento', render: (e) => <span className="font-mono text-xs text-slate-700">{e.eventType}</span> },
+                  { key: 'severity', header: 'Severidad', width: '120px', render: (e) => <StatusPill status={severityToStatus[e.severity] || 'DEFAULT'} /> },
+                  { key: 'desc', header: 'Descripción', render: (e) => <span className="truncate text-sm text-slate-700">{e.description}</span> },
+                  { key: 'created', header: 'Fecha', render: (e) => new Date(e.createdAt).toLocaleString('es-ES') },
+                  {
+                    key: 'actions', header: '', align: 'right', width: '80px',
+                    render: (e) => <Button variant="ghost" size="sm" onClick={() => setSelectedSecurityEvent(e)}>Ver</Button>,
+                  },
+                ]}
+                data={securityEvents}
               />
-              <select
-                value={severityFilter}
-                onChange={(e) => setSeverityFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              >
-                {SEVERITY_OPTIONS.map((severity) => (
-                  <option key={severity} value={severity}>
-                    {severity || 'Todas las severidades'}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="ID de actor"
-                value={actorIdFilter}
-                onChange={(e) => setActorIdFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              <Pagination
+                page={meta.page}
+                pageSize={meta.pageSize}
+                total={meta.total}
+                onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+                className="rounded-b-lg"
               />
             </>
           )}
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Aplicar
-          </button>
-        </div>
-
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-
-        {loading ? (
-          <p className="text-sm text-gray-500">Cargando...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">ID</th>
-
-                  {activeTab === 'audit-logs' ? (
-                    <>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acción</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Entidad</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Actor</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Creado</th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tipo de Evento</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Severidad</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Descripción</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Creado</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {activeTab === 'audit-logs' &&
-                  auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{log.id}</td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{log.action}</td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">
-                        {log.entityType}:{log.entityId}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">
-                        {log.actor?.email || log.actorId}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                {activeTab === 'security-events' &&
-                  securityEvents.map((event) => (
-                    <tr key={event.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{event.id}</td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{event.eventType}</td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            event.severity === 'critical'
-                              ? 'bg-red-100 text-red-800'
-                              : event.severity === 'high'
-                                ? 'bg-orange-100 text-orange-800'
-                                : event.severity === 'medium'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {event.severity}
-                        </span>
-                      </td>
-                      <td className="max-w-xs truncate px-4 py-2 text-sm text-gray-900" title={event.description}>
-                        {event.description}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
-                        {new Date(event.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="mt-4 flex items-center justify-between">
-          <button
-              type="button"
-              disabled={meta.page <= 1}
-              onClick={() => setMeta((prev) => ({ ...prev, page: prev.page - 1 }))}
-              className="rounded-md border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
-            >
-              Anterior
-            </button>
-            <span className="text-sm text-gray-500">
-              Página {meta.page} de {meta.totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={meta.page >= meta.totalPages}
-              onClick={() => setMeta((prev) => ({ ...prev, page: prev.page + 1 }))}
-              className="rounded-md border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
-            >
-              Siguiente
-            </button>
         </div>
       </div>
 
       {selectedAuditLog && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">Detalles del Registro de Auditoría</h3>
-            <button
-              type="button"
-              onClick={() => setSelectedAuditLog(null)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div className="mt-2 grid grid-cols-1 gap-2 text-sm">
-            <div>
-              <span className="font-medium text-gray-700">Acción:</span> {selectedAuditLog.action}
+        <Modal
+          open
+          onClose={() => setSelectedAuditLog(null)}
+          title="Detalle del registro de auditoría"
+          description={selectedAuditLog.action}
+          size="lg"
+          footer={<Button onClick={() => setSelectedAuditLog(null)}>Cerrar</Button>}
+        >
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Acción" value={selectedAuditLog.action} />
+            <Field label="Entidad" value={`${selectedAuditLog.entityType}:${selectedAuditLog.entityId}`} />
+            <Field label="Actor" value={selectedAuditLog.actor?.email || selectedAuditLog.actorId} />
+            <Field label="Fecha" value={new Date(selectedAuditLog.createdAt).toLocaleString('es-ES')} />
+            <Field label="IP" value={selectedAuditLog.ipAddress || '—'} />
+            <Field label="ID de correlación" value={selectedAuditLog.correlationId || '—'} />
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Agente de usuario</dt>
+              <dd className="mt-0.5 text-sm text-slate-900">{selectedAuditLog.userAgent || '—'}</dd>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">Entidad:</span> {selectedAuditLog.entityType}:{selectedAuditLog.entityId}
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Datos</dt>
+              <dd className="mt-0.5">{renderMetadata(selectedAuditLog.payload)}</dd>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">Actor:</span> {selectedAuditLog.actor?.email || selectedAuditLog.actorId}
-            </div>
-            <div>
-              <span className="font-medium text-slate-700">IP:</span> {selectedAuditLog.ipAddress || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Agente de usuario:</span> {selectedAuditLog.userAgent || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">ID de correlación:</span> {selectedAuditLog.correlationId || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Datos:</span>
-              {renderMetadata(selectedAuditLog.payload)}
-            </div>
-          </div>
-        </div>
+          </dl>
+        </Modal>
       )}
 
       {selectedSecurityEvent && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">Detalles del Evento de Seguridad</h3>
-            <button
-              type="button"
-              onClick={() => setSelectedSecurityEvent(null)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div className="mt-2 grid grid-cols-1 gap-2 text-sm">
-            <div>
-              <span className="font-medium text-gray-700">Tipo de evento:</span> {selectedSecurityEvent.eventType}
+        <Modal
+          open
+          onClose={() => setSelectedSecurityEvent(null)}
+          title="Detalle del evento de seguridad"
+          description={selectedSecurityEvent.eventType}
+          size="lg"
+          footer={<Button onClick={() => setSelectedSecurityEvent(null)}>Cerrar</Button>}
+        >
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Tipo de evento" value={selectedSecurityEvent.eventType} />
+            <Field label="Severidad" value={<StatusPill status={severityToStatus[selectedSecurityEvent.severity] || 'DEFAULT'} />} />
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Descripción</dt>
+              <dd className="mt-0.5 text-sm text-slate-900">{selectedSecurityEvent.description}</dd>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">Severidad:</span>{' '}
-              <span
-                className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  selectedSecurityEvent.severity === 'critical'
-                    ? 'bg-red-100 text-red-800'
-                    : selectedSecurityEvent.severity === 'high'
-                      ? 'bg-orange-100 text-orange-800'
-                      : selectedSecurityEvent.severity === 'medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {selectedSecurityEvent.severity}
-              </span>
+            <Field label="IP" value={selectedSecurityEvent.ipAddress || '—'} />
+            <Field label="ID de correlación" value={selectedSecurityEvent.correlationId || '—'} />
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Agente de usuario</dt>
+              <dd className="mt-0.5 text-sm text-slate-900">{selectedSecurityEvent.userAgent || '—'}</dd>
             </div>
-            <div>
-              <span className="font-medium text-gray-700">Descripción:</span> {selectedSecurityEvent.description}
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Metadatos</dt>
+              <dd className="mt-0.5">{renderMetadata(selectedSecurityEvent.metadata)}</dd>
             </div>
-            <div>
-              <span className="font-medium text-slate-700">IP:</span> {selectedSecurityEvent.ipAddress || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Agente de usuario:</span> {selectedSecurityEvent.userAgent || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">ID de correlación:</span> {selectedSecurityEvent.correlationId || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Metadatos:</span>
-              {renderMetadata(selectedSecurityEvent.metadata)}
-            </div>
-          </div>
-        </div>
+          </dl>
+        </Modal>
       )}
+    </>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-slate-900">{children ?? value ?? '—'}</dd>
     </div>
   );
 }

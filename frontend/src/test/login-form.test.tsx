@@ -20,6 +20,6 @@ describe('LoginForm', () => {
   it('should disable button when loading', () => {
     render(<LoginForm onSubmit={vi.fn()} isLoading={true} error={null} />);
 
-    expect(screen.getByRole('button', { name: /verificando/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeDisabled();
   });
 });

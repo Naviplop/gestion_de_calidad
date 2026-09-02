@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { AuditProgram, AuditProgramListItem, AuditListItem } from '../lib/auth/auth.service';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Modal } from '../components/ui/Modal';
+import { Tabs } from '../components/ui/Tabs';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
 
 type Tab = 'details' | 'audits';
 
@@ -49,7 +60,6 @@ export function AuditProgramsPage() {
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
-    loadPrograms();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -73,7 +83,7 @@ export function AuditProgramsPage() {
       setShowCreateModal(false);
       loadPrograms();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el programa de auditoría');
+      setFormError(err instanceof Error ? err.message : 'Error al crear el programa de auditoría');
     }
   };
 
@@ -97,7 +107,7 @@ export function AuditProgramsPage() {
       setDetailTab('details');
       loadAudits(programId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar el detalle del programa de auditoría');
+      setError(err instanceof Error ? err.message : 'Error al cargar el detalle del programa');
     }
   };
 
@@ -123,265 +133,199 @@ export function AuditProgramsPage() {
       }
       loadPrograms();
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Error al ${action} el programa de auditoría`);
+      setError(err instanceof Error ? err.message : `Error al ${action} el programa`);
     } finally {
       setActionLoading(null);
     }
   };
 
-  const statusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      PLANNED: 'bg-blue-100 text-blue-800',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-      COMPLETED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Programas de Auditoría</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestione los programas de auditoría de su organización.
-          </p>
+    <>
+      <PageHeader
+        title="Programas de auditoría"
+        description="Planifica y agrupa auditorías dentro de un programa anual o por proceso."
+        breadcrumbs={[{ label: 'Principal', href: '/' }, { label: 'Programas' }]}
+        actions={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nuevo programa</Button>}
+      />
+
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Buscar por nombre..."
+              leftIcon="search"
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilter(e.target.value)}
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'PLANNED', label: 'Planificado' },
+                { value: 'IN_PROGRESS', label: 'En progreso' },
+                { value: 'COMPLETED', label: 'Completado' },
+                { value: 'CANCELLED', label: 'Cancelado' },
+              ]}
+            />
+          </div>
+          <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-        >
-          Crear Programa de Auditoría
-        </button>
+
+        {loading ? (
+          <LoadingState message="Cargando programas..." />
+        ) : programs.length === 0 ? (
+          <EmptyState
+            icon="clipboard"
+            title="No hay programas registrados"
+            description="Crea el primer programa para agrupar las auditorías del período."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear programa</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(p) => p.id}
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Nombre',
+                  render: (p) => <span className="text-sm font-medium text-slate-900">{p.name}</span>,
+                },
+                {
+                  key: 'period',
+                  header: 'Período',
+                  render: (p) => <span className="text-sm text-slate-600">{p.periodStart} — {p.periodEnd}</span>,
+                },
+                { key: 'status', header: 'Estado', width: '160px', render: (p) => <StatusPill status={p.status} /> },
+                { key: 'responsible', header: 'Responsable', render: (p) => p.responsible ? `${p.responsible.firstName} ${p.responsible.lastName}` : '—' },
+                {
+                  key: 'actions', header: '', width: '80px', align: 'right',
+                  render: (p) => <Button variant="ghost" size="sm" onClick={() => openDetail(p.id)} rightIcon="chevron-right">Ver</Button>,
+                },
+              ]}
+              data={programs}
+              onRowClick={(p) => openDetail(p.id)}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
       </div>
-
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-800">
-          {error}
-        </div>
-      )}
-
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Buscar programas de auditoría..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => handleStatusFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Todos los estados</option>
-          <option value="PLANNED">Planificado</option>
-          <option value="IN_PROGRESS">En Progreso</option>
-          <option value="COMPLETED">Completado</option>
-          <option value="CANCELLED">Cancelado</option>
-        </select>
-        <button
-          onClick={handleSearch}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="text-center text-sm text-gray-500">Cargando...</div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Nombre</th>
-                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Período</th>
-                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
-                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Responsable</th>
-                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {programs.map((program) => (
-                <tr key={program.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    <button
-                      onClick={() => openDetail(program.id)}
-                      className="hover:underline"
-                    >
-                      {program.name}
-                    </button>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {program.periodStart} - {program.periodEnd}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColor(program.status)}`}>
-                      {program.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {program.responsible ? `${program.responsible.firstName} ${program.responsible.lastName}` : '-'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <div className="flex gap-2">
-                      {program.status === 'PLANNED' && (
-                        <button
-                          onClick={() => handleLifecycleAction('start', program.id)}
-                          disabled={actionLoading === 'start'}
-                          className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                        >
-                          Iniciar
-                        </button>
-                      )}
-                      {program.status === 'IN_PROGRESS' && (
-                        <>
-                          <button
-                            onClick={() => handleLifecycleAction('complete', program.id)}
-                            disabled={actionLoading === 'complete'}
-                            className="text-green-600 hover:text-green-800 disabled:opacity-50"
-                          >
-                            Completar
-                          </button>
-                          <button
-                            onClick={() => handleLifecycleAction('cancel', program.id)}
-                            disabled={actionLoading === 'cancel'}
-                            className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Crear Programa de Auditoría</h2>
-            <form onSubmit={handleCreate} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Inicio del Período</label>
-                  <input
-                    type="date"
-                    name="periodStart"
-                    required
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Fin del Período</label>
-                  <input
-                    type="date"
-                    name="periodEnd"
-                    required
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-              {formError && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-                  {formError}
-                </div>
-              )}
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-                >
-                  Crear
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowCreateModal(false); setFormError(null); }}
+          title="Crear programa de auditoría"
+          description="Define un nuevo programa para agrupar auditorías."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-program-form">Crear programa</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-program-form" onSubmit={handleCreate} className="space-y-4">
+            <Input label="Nombre" name="name" required />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea
+                name="description"
+                rows={3}
+                className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Inicio del período" name="periodStart" type="date" required />
+              <Input label="Fin del período" name="periodEnd" type="date" required />
+            </div>
+            <Input label="ID responsable" name="responsibleId" />
+          </form>
+        </Modal>
       )}
 
       {selectedProgram && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-4xl rounded-lg bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{selectedProgram.name}</h2>
-              <button
-                onClick={() => setSelectedProgram(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="mt-4 flex gap-4 border-b border-gray-200">
-              <button
-                onClick={() => setDetailTab('details')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Detalles
-              </button>
-              <button
-                onClick={() => setDetailTab('audits')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'audits' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Auditorías
-              </button>
-            </div>
-            <div className="mt-4">
-              {detailTab === 'details' && (
-                <div className="space-y-2 text-sm">
-                  <p><strong>Descripción:</strong> {selectedProgram.description || '-'}</p>
-                  <p><strong>Período:</strong> {selectedProgram.periodStart} - {selectedProgram.periodEnd}</p>
-                  <p><strong>Estado:</strong> {selectedProgram.status}</p>
-                </div>
+        <Modal
+          open
+          onClose={() => setSelectedProgram(null)}
+          title={selectedProgram.name}
+          description={`${selectedProgram.periodStart} — ${selectedProgram.periodEnd}`}
+          size="xl"
+          footer={
+            <div className="flex gap-2">
+              {selectedProgram.status === 'PLANNED' && (
+                <Button onClick={() => handleLifecycleAction('start', selectedProgram.id)} loading={actionLoading === 'start'}>Iniciar</Button>
               )}
-              {detailTab === 'audits' && (
-                <div className="space-y-2">
-                  {audits.map((audit) => (
-                    <div key={audit.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                      <div className="font-medium">{audit.title}</div>
-                      <div className="text-gray-500">{audit.code} - {audit.status}</div>
-                    </div>
-                  ))}
-                  {audits.length === 0 && (
-                    <div className="text-sm text-gray-500">No se encontraron auditorías.</div>
-                  )}
-                </div>
+              {selectedProgram.status === 'IN_PROGRESS' && (
+                <>
+                  <Button variant="secondary" onClick={() => handleLifecycleAction('complete', selectedProgram.id)} loading={actionLoading === 'complete'}>Completar</Button>
+                  <Button variant="danger" onClick={() => handleLifecycleAction('cancel', selectedProgram.id)} loading={actionLoading === 'cancel'}>Cancelar</Button>
+                </>
               )}
             </div>
+          }
+        >
+          <div className="-mx-1 mb-4">
+            <Tabs
+              tabs={[
+                { id: 'details', label: 'Detalles' },
+                { id: 'audits', label: 'Auditorías' },
+              ]}
+              activeTab={detailTab}
+              onChange={(t) => setDetailTab(t as Tab)}
+            />
           </div>
-        </div>
+
+          {detailTab === 'details' && (
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Estado" value={<StatusPill status={selectedProgram.status} />} />
+              <Field label="Responsable" value={selectedProgram.responsible ? `${selectedProgram.responsible.firstName} ${selectedProgram.responsible.lastName}` : '—'} />
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Descripción</dt>
+                <dd className="mt-0.5 text-sm text-slate-900">{selectedProgram.description || '—'}</dd>
+              </div>
+            </dl>
+          )}
+
+          {detailTab === 'audits' && (
+            audits.length === 0 ? (
+              <p className="text-sm text-slate-500">No hay auditorías asociadas a este programa.</p>
+            ) : (
+              <Table
+                rowKey={(a) => a.id}
+                columns={[
+                  { key: 'code', header: 'Código', render: (a) => <span className="font-mono text-xs">{a.code}</span> },
+                  { key: 'title', header: 'Título', render: (a) => <span className="text-sm text-slate-900">{a.title}</span> },
+                  { key: 'status', header: 'Estado', render: (a) => <StatusPill status={a.status} /> },
+                ]}
+                data={audits}
+              />
+            )
+          )}
+        </Modal>
       )}
+    </>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-slate-900">{children ?? value ?? '—'}</dd>
     </div>
   );
 }

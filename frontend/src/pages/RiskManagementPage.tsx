@@ -1,16 +1,69 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { Risk, RiskListItem, RiskAssessment, RiskControl, RiskTreatment } from '../lib/auth/auth.service';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Modal } from '../components/ui/Modal';
+import { Tabs } from '../components/ui/Tabs';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
 
 type Tab = 'details' | 'assessments' | 'controls' | 'treatments';
 
-const STATUS_OPTIONS = ['IDENTIFIED', 'ASSESSED', 'TREATMENT_PLANNED', 'UNDER_CONTROL', 'CLOSED'];
-const RISK_TYPE_OPTIONS = ['INTERNAL', 'EXTERNAL', 'COMPLIANCE', 'OPERATIONAL', 'STRATEGIC', 'FINANCIAL', 'TECHNICAL', 'OTHER'];
-const PROBABILITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-const IMPACT_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-const CONTROL_TYPE_OPTIONS = ['PREVENTIVE', 'DETECTIVE', 'CORRECTIVE', 'COMPENSATING', 'OTHER'];
-const TREATMENT_STRATEGY_OPTIONS = ['AVOID', 'MITIGATE', 'TRANSFER', 'ACCEPT', 'EXPLOIT', 'ENHANCE', 'SHARE'];
-const TREATMENT_STATUS_OPTIONS = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+const STATUS_OPTIONS = [
+  { value: 'IDENTIFIED', label: 'Identificado' },
+  { value: 'ASSESSED', label: 'Evaluado' },
+  { value: 'TREATMENT_PLANNED', label: 'Tratamiento planificado' },
+  { value: 'UNDER_CONTROL', label: 'Bajo control' },
+  { value: 'CLOSED', label: 'Cerrado' },
+];
+const STATUS_VALUES: string[] = [];
+STATUS_OPTIONS.forEach((s) => STATUS_VALUES.push(s.value));
+const RISK_TYPE_OPTIONS = [
+  { value: 'INTERNAL', label: 'Interno' },
+  { value: 'EXTERNAL', label: 'Externo' },
+  { value: 'COMPLIANCE', label: 'Cumplimiento' },
+  { value: 'OPERATIONAL', label: 'Operacional' },
+  { value: 'STRATEGIC', label: 'Estratégico' },
+  { value: 'FINANCIAL', label: 'Financiero' },
+  { value: 'TECHNICAL', label: 'Técnico' },
+  { value: 'OTHER', label: 'Otro' },
+];
+const RISK_TYPE_VALUES = RISK_TYPE_OPTIONS.map((t) => t.value);
+const PROBABILITY_OPTIONS = [
+  { value: 'LOW', label: 'Baja' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'HIGH', label: 'Alta' },
+  { value: 'CRITICAL', label: 'Crítica' },
+];
+const IMPACT_OPTIONS = PROBABILITY_OPTIONS;
+const CONTROL_TYPE_OPTIONS = [
+  { value: 'PREVENTIVE', label: 'Preventivo' },
+  { value: 'DETECTIVE', label: 'Detectivo' },
+  { value: 'CORRECTIVE', label: 'Correctivo' },
+  { value: 'COMPENSATING', label: 'Compensatorio' },
+  { value: 'OTHER', label: 'Otro' },
+];
+const TREATMENT_STRATEGY_OPTIONS = [
+  { value: 'AVOID', label: 'Evitar' },
+  { value: 'MITIGATE', label: 'Mitigar' },
+  { value: 'TRANSFER', label: 'Transferir' },
+  { value: 'ACCEPT', label: 'Aceptar' },
+  { value: 'EXPLOIT', label: 'Explotar' },
+  { value: 'ENHANCE', label: 'Mejorar' },
+  { value: 'SHARE', label: 'Compartir' },
+];
+const TREATMENT_STATUS_OPTIONS = [
+  { value: 'PLANNED', label: 'Planificado' },
+  { value: 'IN_PROGRESS', label: 'En progreso' },
+  { value: 'COMPLETED', label: 'Completado' },
+  { value: 'CANCELLED', label: 'Cancelado' },
+];
 
 export function RiskManagementPage() {
   const [risks, setRisks] = useState<RiskListItem[]>([]);
@@ -50,7 +103,7 @@ export function RiskManagementPage() {
       setRisks(response.data);
       setMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load risks');
+      setError(err instanceof Error ? err.message : 'Error al cargar los riesgos');
     } finally {
       setLoading(false);
     }
@@ -120,7 +173,7 @@ export function RiskManagementPage() {
       setShowCreateModal(false);
       loadRisks();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create risk');
+      setFormError(err instanceof Error ? err.message : 'Error al crear el riesgo');
     }
   };
 
@@ -141,7 +194,7 @@ export function RiskManagementPage() {
           setAssessmentsMeta(response.meta);
         });
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create assessment');
+      setFormError(err instanceof Error ? err.message : 'Error al crear la evaluación');
     }
   };
 
@@ -163,7 +216,7 @@ export function RiskManagementPage() {
           setControlsMeta(response.meta);
         });
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create control');
+      setFormError(err instanceof Error ? err.message : 'Error al crear el control');
     }
   };
 
@@ -191,7 +244,7 @@ export function RiskManagementPage() {
           setTreatmentsMeta(response.meta);
         });
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create treatment');
+      setFormError(err instanceof Error ? err.message : 'Error al crear el tratamiento');
     }
   };
 
@@ -218,441 +271,373 @@ export function RiskManagementPage() {
       });
       setShowEditTreatmentModal(false);
       setEditingTreatment(null);
-      authApiClient.listRiskTreatments(selectedRisk!.id, { page: treatmentsMeta.page, pageSize: treatmentsMeta.pageSize })
-        .then((response) => {
-          setTreatments(response.data);
-          setTreatmentsMeta(response.meta);
-        });
+      if (selectedRisk) {
+        authApiClient.listRiskTreatments(selectedRisk.id, { page: treatmentsMeta.page, pageSize: treatmentsMeta.pageSize })
+          .then((response) => {
+            setTreatments(response.data);
+            setTreatmentsMeta(response.meta);
+          });
+      }
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to update treatment');
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'IDENTIFIED': return 'bg-gray-100 text-gray-800';
-      case 'ASSESSED': return 'bg-blue-100 text-blue-800';
-      case 'TREATMENT_PLANNED': return 'bg-yellow-100 text-yellow-800';
-      case 'UNDER_CONTROL': return 'bg-green-100 text-green-800';
-      case 'CLOSED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      setFormError(err instanceof Error ? err.message : 'Error al actualizar el tratamiento');
     }
   };
 
   const getScoreColor = (score: string | null) => {
-    if (!score) return 'text-gray-600';
+    if (!score) return 'text-slate-600';
     const value = parseInt(score, 10);
-    if (value >= 12) return 'text-red-600 font-bold';
-    if (value >= 6) return 'text-yellow-600 font-bold';
-    return 'text-green-600 font-bold';
+    if (value >= 12) return 'text-red-600 font-semibold';
+    if (value >= 6) return 'text-amber-600 font-semibold';
+    return 'text-emerald-600 font-semibold';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Gestión de riesgos</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          Nuevo riesgo
-        </button>
-      </div>
+    <>
+      <PageHeader
+        title="Gestión de riesgos"
+        description="Identifique, evalúe, controle y dé tratamiento a los riesgos del sistema de gestión."
+        breadcrumbs={[{ label: 'Principal', href: '/' }, { label: 'Riesgos' }]}
+        actions={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nuevo riesgo</Button>}
+      />
 
-      {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          placeholder="Buscar riesgos..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Todos los estados</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <select
-          value={riskTypeFilter}
-          onChange={(e) => { setRiskTypeFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Todos los tipos</option>
-          {RISK_TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
+              placeholder="Buscar por código o título..."
+              leftIcon="search"
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
+              options={[{ value: '', label: 'Todos los estados' }, ...STATUS_OPTIONS]}
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              value={riskTypeFilter}
+              onChange={(e) => { setRiskTypeFilter(e.target.value); setMeta((prev) => ({ ...prev, page: 1 })); }}
+              options={[{ value: '', label: 'Todos los tipos' }, ...RISK_TYPE_OPTIONS]}
+            />
+          </div>
+        </div>
 
-      {loading ? (
-        <div className="text-center text-sm text-slate-500">Cargando...</div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Code</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Tipo</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {risks.map((risk) => (
-              <tr key={risk.id} className="hover:bg-gray-50">
-                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{risk.code}</td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">{risk.title}</td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">{risk.riskType}</td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm">
-                  <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(risk.status)}`}>
-                    {risk.status}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">{risk.owner?.firstName} {risk.owner?.lastName}</td>
-                <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                  <button
-                    onClick={() => loadDetail(risk as unknown as Risk)}
-                    className="text-gray-900 underline hover:text-gray-700"
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <LoadingState message="Cargando riesgos..." />
+        ) : risks.length === 0 ? (
+          <EmptyState
+            icon="shield"
+            title="No hay riesgos registrados"
+            description="Identifique el primer riesgo para iniciar el ciclo de evaluación y tratamiento."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear riesgo</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(r) => r.id}
+              columns={[
+                { key: 'code', header: 'Código', width: '120px', render: (r) => <span className="font-mono text-xs font-semibold text-slate-900">{r.code}</span> },
+                { key: 'title', header: 'Título', render: (r) => <span className="text-sm font-medium text-slate-900">{r.title}</span> },
+                { key: 'type', header: 'Tipo', render: (r) => <span className="text-sm text-slate-600">{r.riskType}</span> },
+                { key: 'status', header: 'Estado', width: '200px', render: (r) => <StatusPill status={r.status} /> },
+                { key: 'owner', header: 'Propietario', render: (r) => r.owner ? `${r.owner.firstName} ${r.owner.lastName}` : '—' },
+                {
+                  key: 'actions', header: '', align: 'right', width: '80px',
+                  render: (r) => <Button variant="ghost" size="sm" onClick={() => loadDetail(r as unknown as Risk)} rightIcon="chevron-right">Ver</Button>,
+                },
+              ]}
+              data={risks}
+              onRowClick={(r) => loadDetail(r as unknown as Risk)}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
       </div>
-      )}
 
       {selectedRisk && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">{selectedRisk.title}</h2>
-            <button onClick={() => setSelectedRisk(null)} className="text-sm text-slate-500 hover:text-slate-700">Cerrar</button>
-          </div>
-          <div className="mt-4 flex gap-2 border-b border-gray-200">
-            {(['details', 'assessments', 'controls', 'treatments'] as Tab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setDetailTab(tab)}
-                className={`px-4 py-2 text-sm font-medium ${
-                  detailTab === tab ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+        <Modal
+          open
+          onClose={() => setSelectedRisk(null)}
+          title={selectedRisk.title}
+          description={`${selectedRisk.code} · ${selectedRisk.riskType}`}
+          size="xl"
+          footer={<Button onClick={() => setSelectedRisk(null)}>Cerrar</Button>}
+        >
+          <div className="-mx-1 mb-4">
+            <Tabs
+              tabs={[
+                { id: 'details', label: 'Detalles' },
+                { id: 'assessments', label: 'Evaluaciones' },
+                { id: 'controls', label: 'Controles' },
+                { id: 'treatments', label: 'Tratamientos' },
+              ]}
+              activeTab={detailTab}
+              onChange={(t) => setDetailTab(t as Tab)}
+            />
           </div>
 
           {detailTab === 'details' && (
-            <div className="mt-4 space-y-2 text-sm text-gray-700">
-              <p><span className="font-medium">Code:</span> {selectedRisk.code}</p>
-              <p><span className="font-medium">Description:</span> {selectedRisk.description}</p>
-              <p><span className="font-medium">Tipo:</span> {selectedRisk.riskType}</p>
-              <p><span className="font-medium">Estado:</span> {selectedRisk.status}</p>
-              <p><span className="font-medium">Created:</span> {new Date(selectedRisk.createdAt).toLocaleString()}</p>
-            </div>
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Código" value={<span className="font-mono">{selectedRisk.code}</span>} />
+              <Field label="Estado" value={<StatusPill status={selectedRisk.status} />} />
+              <Field label="Tipo" value={selectedRisk.riskType} />
+              <Field label="Propietario" value={selectedRisk.owner ? `${selectedRisk.owner.firstName} ${selectedRisk.owner.lastName}` : '—'} />
+              <Field label="Creado" value={new Date(selectedRisk.createdAt).toLocaleString('es-ES')} />
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Descripción</dt>
+                <dd className="mt-0.5 text-sm text-slate-900">{selectedRisk.description}</dd>
+              </div>
+            </dl>
           )}
 
           {detailTab === 'assessments' && (
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">Assessments</h3>
-                <button onClick={() => setShowAssessmentModal(true)} className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800">New Assessment</button>
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => setShowAssessmentModal(true)} leftIcon="plus">Nueva evaluación</Button>
               </div>
-              <div className="overflow-hidden rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Probability</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Impact</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Score</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Assessed At</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {assessments.map((a) => (
-                      <tr key={a.id}>
-                        <td className="px-4 py-2 text-sm text-gray-700">{a.probability}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{a.impact}</td>
-                        <td className={`px-4 py-2 text-sm ${getScoreColor(a.score)}`}>{a.score}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{new Date(a.assessedAt).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {assessments.length === 0 ? (
+                <p className="text-sm text-slate-500">No hay evaluaciones registradas.</p>
+              ) : (
+                <>
+                  <Table
+                    rowKey={(a) => a.id}
+                    columns={[
+                      { key: 'p', header: 'Probabilidad', render: (a) => <StatusPill status={a.probability} /> },
+                      { key: 'i', header: 'Impacto', render: (a) => <StatusPill status={a.impact} /> },
+                      { key: 's', header: 'Puntaje', render: (a) => <span className={getScoreColor(a.score)}>{a.score}</span> },
+                      { key: 'd', header: 'Fecha', render: (a) => new Date(a.assessedAt).toLocaleString('es-ES') },
+                    ]}
+                    data={assessments}
+                  />
+                  <Pagination
+                    page={assessmentsMeta.page}
+                    pageSize={assessmentsMeta.pageSize}
+                    total={assessmentsMeta.total}
+                    onPageChange={(p) => setAssessmentsMeta((prev) => ({ ...prev, page: p }))}
+                    className="rounded-b-lg"
+                  />
+                </>
+              )}
             </div>
           )}
 
           {detailTab === 'controls' && (
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">Controls</h3>
-                <button onClick={() => setShowControlModal(true)} className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800">New Control</button>
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => setShowControlModal(true)} leftIcon="plus">Nuevo control</Button>
               </div>
-              <div className="overflow-hidden rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Description</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Effectiveness</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {controls.map((c) => (
-                      <tr key={c.id}>
-                        <td className="px-4 py-2 text-sm text-gray-700">{c.controlType}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{c.description}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{c.effectiveness || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {controls.length === 0 ? (
+                <p className="text-sm text-slate-500">No hay controles registrados.</p>
+              ) : (
+                <Table
+                  rowKey={(c) => c.id}
+                  columns={[
+                    { key: 'type', header: 'Tipo', render: (c) => <span className="text-sm">{c.controlType}</span> },
+                    { key: 'desc', header: 'Descripción', render: (c) => c.description },
+                    { key: 'eff', header: 'Efectividad', render: (c) => c.effectiveness || '—' },
+                  ]}
+                  data={controls}
+                />
+              )}
             </div>
           )}
 
           {detailTab === 'treatments' && (
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">Treatments</h3>
-                <button onClick={() => setShowTreatmentModal(true)} className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800">New Treatment</button>
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => setShowTreatmentModal(true)} leftIcon="plus">Nuevo tratamiento</Button>
               </div>
-              <div className="overflow-hidden rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Strategy</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Description</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                      <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {treatments.map((t) => (
-                      <tr key={t.id}>
-                        <td className="px-4 py-2 text-sm text-gray-700">{t.strategy}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{t.description}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{t.status}</td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          <button
-                            onClick={() => { setEditingTreatment(t); setShowEditTreatmentModal(true); }}
-                            className="text-gray-900 underline hover:text-gray-700"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {treatments.length === 0 ? (
+                <p className="text-sm text-slate-500">No hay tratamientos registrados.</p>
+              ) : (
+                <Table
+                  rowKey={(t) => t.id}
+                  columns={[
+                    { key: 'strat', header: 'Estrategia', render: (t) => t.strategy },
+                    { key: 'desc', header: 'Descripción', render: (t) => t.description },
+                    { key: 'status', header: 'Estado', render: (t) => <StatusPill status={t.status} /> },
+                    {
+                      key: 'actions', header: '', align: 'right',
+                      render: (t) => <Button variant="ghost" size="sm" onClick={() => { setEditingTreatment(t); setShowEditTreatmentModal(true); }} leftIcon="edit">Editar</Button>,
+                    },
+                  ]}
+                  data={treatments}
+                />
+              )}
             </div>
           )}
-        </div>
+        </Modal>
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Create Risk</h3>
-            {formError && <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleCreate} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Code</label>
-                <input name="code" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input name="title" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" required rows={3} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Risk Type</label>
-                <select name="riskType" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {RISK_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Process (optional)</label>
-                <input name="processId" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Owner (optional)</label>
-                <input name="ownerId" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowCreateModal(false); setFormError(null); }}
+          title="Crear riesgo"
+          description="Registra un nuevo riesgo en el sistema."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-risk-form">Crear riesgo</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-risk-form" onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Código" name="code" required />
+              <Select
+                label="Tipo de riesgo"
+                name="riskType"
+                required
+                defaultValue={RISK_TYPE_VALUES[0]}
+                options={RISK_TYPE_OPTIONS}
+              />
+            </div>
+            <Input label="Título" name="title" required />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" required rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="ID de proceso" name="processId" />
+              <Input label="ID de propietario" name="ownerId" />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {showAssessmentModal && selectedRisk && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Create Assessment</h3>
-            {formError && <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleCreateAssessment} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Probability</label>
-                <select name="probability" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {PROBABILITY_OPTIONS.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Impact</label>
-                <select name="impact" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {IMPACT_OPTIONS.map((i) => (
-                    <option key={i} value={i}>{i}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAssessmentModal(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowAssessmentModal(false); setFormError(null); }}
+          title="Crear evaluación"
+          description={`${selectedRisk.code} · ${selectedRisk.title}`}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowAssessmentModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-assessment-form">Crear evaluación</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-assessment-form" onSubmit={handleCreateAssessment} className="space-y-4">
+            <Select label="Probabilidad" name="probability" required defaultValue={PROBABILITY_OPTIONS[0].value} options={PROBABILITY_OPTIONS} />
+            <Select label="Impacto" name="impact" required defaultValue={IMPACT_OPTIONS[0].value} options={IMPACT_OPTIONS} />
+          </form>
+        </Modal>
       )}
 
       {showControlModal && selectedRisk && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Create Control</h3>
-            {formError && <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleCreateControl} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" required rows={3} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Control Type</label>
-                <select name="controlType" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {CONTROL_TYPE_OPTIONS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Effectiveness (optional)</label>
-                <select name="effectiveness" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  <option value="">None</option>
-                  {['EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE', 'NOT_EVALUATED'].map((e) => (
-                    <option key={e} value={e}>{e}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowControlModal(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowControlModal(false); setFormError(null); }}
+          title="Crear control"
+          description="Asocia un control al riesgo."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowControlModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-control-form">Crear control</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-control-form" onSubmit={handleCreateControl} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" required rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+            <Select label="Tipo de control" name="controlType" required defaultValue={CONTROL_TYPE_OPTIONS[0].value} options={CONTROL_TYPE_OPTIONS} />
+            <Select
+              label="Efectividad"
+              name="effectiveness"
+              defaultValue=""
+              options={[{ value: '', label: 'Sin evaluar' }, { value: 'EFFECTIVE', label: 'Efectivo' }, { value: 'PARTIALLY_EFFECTIVE', label: 'Parcialmente efectivo' }, { value: 'INEFFECTIVE', label: 'Inefectivo' }, { value: 'NOT_EVALUATED', label: 'No evaluado' }]}
+            />
+          </form>
+        </Modal>
       )}
 
       {showTreatmentModal && selectedRisk && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Create Treatment</h3>
-            {formError && <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleCreateTreatment} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Strategy</label>
-                <select name="strategy" required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {TREATMENT_STRATEGY_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" required rows={3} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Responsible (optional)</label>
-                <input name="responsibleId" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Due Date (optional)</label>
-                <input type="date" name="dueDate" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowTreatmentModal(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowTreatmentModal(false); setFormError(null); }}
+          title="Crear tratamiento"
+          description="Define la estrategia de tratamiento del riesgo."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowTreatmentModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-treatment-form">Crear tratamiento</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-treatment-form" onSubmit={handleCreateTreatment} className="space-y-4">
+            <Select label="Estrategia" name="strategy" required defaultValue={TREATMENT_STRATEGY_OPTIONS[0].value} options={TREATMENT_STRATEGY_OPTIONS} />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" required rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="ID responsable" name="responsibleId" />
+              <Input label="Fecha de vencimiento" name="dueDate" type="date" />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {showEditTreatmentModal && editingTreatment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Edit Treatment</h3>
-            {formError && <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleUpdateTreatment} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Strategy</label>
-                <select name="strategy" defaultValue={editingTreatment.strategy} required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {TREATMENT_STRATEGY_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" required rows={3} defaultValue={editingTreatment.description} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Responsible (optional)</label>
-                <input name="responsibleId" defaultValue={editingTreatment.responsibleId || ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Due Date (optional)</label>
-                <input type="date" name="dueDate" defaultValue={editingTreatment.dueDate ? editingTreatment.dueDate.split('T')[0] : ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" defaultValue={editingTreatment.status} required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  {TREATMENT_STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Completed At (optional)</label>
-                <input type="date" name="completedAt" defaultValue={editingTreatment.completedAt ? editingTreatment.completedAt.split('T')[0] : ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { setShowEditTreatmentModal(false); setEditingTreatment(null); }} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowEditTreatmentModal(false); setEditingTreatment(null); setFormError(null); }}
+          title="Editar tratamiento"
+          description="Actualiza la estrategia o el estado del tratamiento."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowEditTreatmentModal(false); setEditingTreatment(null); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="edit-treatment-form">Guardar cambios</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="edit-treatment-form" onSubmit={handleUpdateTreatment} className="space-y-4">
+            <Select label="Estrategia" name="strategy" required defaultValue={editingTreatment.strategy} options={TREATMENT_STRATEGY_OPTIONS} />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" required rows={3} defaultValue={editingTreatment.description} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="ID responsable" name="responsibleId" defaultValue={editingTreatment.responsibleId || ''} />
+              <Input label="Fecha de vencimiento" name="dueDate" type="date" defaultValue={editingTreatment.dueDate ? editingTreatment.dueDate.split('T')[0] : ''} />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select label="Estado" name="status" required defaultValue={editingTreatment.status} options={TREATMENT_STATUS_OPTIONS} />
+              <Input label="Fecha de completado" name="completedAt" type="date" defaultValue={editingTreatment.completedAt ? editingTreatment.completedAt.split('T')[0] : ''} />
+            </div>
+          </form>
+        </Modal>
       )}
+    </>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-slate-900">{children ?? value ?? '—'}</dd>
     </div>
   );
 }

@@ -3,6 +3,17 @@ import { authApiClient } from '../lib/auth/auth.service';
 import type { Audit, AuditListItem, AuditChecklist, AuditFinding } from '../lib/auth/auth.service';
 import { useToast } from '../components/Toast';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Modal } from '../components/ui/Modal';
+import { Tabs } from '../components/ui/Tabs';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
 
 type Tab = 'details' | 'checklists' | 'findings';
 
@@ -13,6 +24,19 @@ const AUDIT_LIFECYCLE_ACTIONS: Record<AuditStatus, string[]> = {
   IN_PROGRESS: ['complete', 'cancel'],
   COMPLETED: [],
   CANCELLED: [],
+};
+
+const AUDIT_STATUS_PILL: Record<AuditStatus, 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'> = {
+  PLANNED: 'PLANNED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  start: 'Iniciar',
+  complete: 'Completar',
+  cancel: 'Cancelar',
 };
 
 export function AuditsPage() {
@@ -64,7 +88,6 @@ export function AuditsPage() {
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
-    loadAudits();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -158,7 +181,7 @@ export function AuditsPage() {
           showToast('Auditoría completada', 'success');
           break;
         case 'cancel':
-          await authApiClient.cancelAudit(auditId, 'Cancelled by user');
+          await authApiClient.cancelAudit(auditId, 'Cancelada por el usuario');
           showToast('Auditoría cancelada', 'warning');
           break;
         default:
@@ -178,281 +201,166 @@ export function AuditsPage() {
     }
   };
 
-  const statusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      PLANNED: 'bg-blue-100 text-blue-800',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-      COMPLETED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
   const availableActions = (status: string) => AUDIT_LIFECYCLE_ACTIONS[status as AuditStatus] || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Auditorías</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestiona las auditorías de tu organización.
-          </p>
+    <>
+      <PageHeader
+        title="Auditorías"
+        description="Planifica, ejecuta y haz seguimiento a las auditorías del sistema de gestión."
+        breadcrumbs={[{ label: 'Principal', href: '/' }, { label: 'Auditorías' }]}
+        actions={
+          <Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nueva auditoría</Button>
+        }
+      />
+
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Buscar por código o título..."
+              leftIcon="search"
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilter(e.target.value)}
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'PLANNED', label: 'Planificada' },
+                { value: 'IN_PROGRESS', label: 'En progreso' },
+                { value: 'COMPLETED', label: 'Completada' },
+                { value: 'CANCELLED', label: 'Cancelada' },
+              ]}
+            />
+          </div>
+          <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-        >
-          Crear auditoría
-        </button>
+
+        {loading ? (
+          <LoadingState message="Cargando auditorías..." />
+        ) : audits.length === 0 ? (
+          <EmptyState
+            icon="clipboard"
+            title="No hay auditorías registradas"
+            description="Crea la primera auditoría para comenzar a gestionar el programa de auditorías."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear auditoría</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(a) => a.id}
+              columns={[
+                { key: 'code', header: 'Código', width: '140px', render: (a) => <span className="font-mono text-sm font-semibold text-slate-900">{a.code}</span> },
+                {
+                  key: 'title',
+                  header: 'Título',
+                  render: (a) => (
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-900">{a.title}</p>
+                      <p className="truncate text-xs text-slate-500">{a.auditType || '—'}</p>
+                    </div>
+                  ),
+                },
+                { key: 'status', header: 'Estado', width: '160px', render: (a) => <StatusPill status={AUDIT_STATUS_PILL[a.status as AuditStatus] || a.status} /> },
+                { key: 'planned', header: 'Inicio planificado', width: '160px', render: (a) => a.plannedStart ? new Date(a.plannedStart).toLocaleDateString('es-ES') : '—' },
+                {
+                  key: 'actions',
+                  header: '',
+                  width: '80px',
+                  align: 'right',
+                  render: (a) => (
+                    <Button variant="ghost" size="sm" onClick={() => openDetail(a.id)} rightIcon="chevron-right">
+                      Ver
+                    </Button>
+                  ),
+                },
+              ]}
+              data={audits}
+              onRowClick={(a) => openDetail(a.id)}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
       </div>
-
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-800">
-          {error}
-        </div>
-      )}
-
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Buscar auditorías..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => handleStatusFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-        <option value="">Todos los estados</option>
-        <option value="PLANNED">Planificada</option>
-        <option value="IN_PROGRESS">En progreso</option>
-        <option value="COMPLETED">Completada</option>
-        <option value="CANCELLED">Cancelada</option>
-        </select>
-        <button
-          onClick={handleSearch}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      {loading ? (
-          <div className="text-center text-sm text-gray-500">Cargando...</div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Code</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Planned</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {audits.map((audit) => (
-                <tr key={audit.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    <button
-                      onClick={() => openDetail(audit.id)}
-                      className="hover:underline"
-                    >
-                      {audit.code}
-                    </button>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {audit.title}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColor(audit.status)}`}>
-                      {audit.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {audit.plannedStart ? new Date(audit.plannedStart).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {availableActions(audit.status).length > 0 && (
-                      <div className="flex gap-2">
-                        {availableActions(audit.status).map((action) => {
-                          const isDestructive = action === 'cancel';
-                          const label = action.charAt(0).toUpperCase() + action.slice(1);
-                          return (
-                            <button
-                              key={action}
-                              onClick={() => handleLifecycleAction(action, audit.id)}
-                              disabled={actionLoading === action}
-                              className={`${
-                                isDestructive
-                                  ? 'text-red-600 hover:text-red-800'
-                                  : action === 'start'
-                                  ? 'text-blue-600 hover:text-blue-800'
-                                  : 'text-green-600 hover:text-green-800'
-                              } disabled:opacity-50`}
-                            >
-                              {actionLoading === action ? 'Processing...' : label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Crear auditoría</h2>
-            <form onSubmit={handleCreate} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Code</label>
-                <input
-                  type="text"
-                  name="code"
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Inicio planificado</label>
-                  <input
-                    type="datetime-local"
-                    name="plannedStart"
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Planned End</label>
-                  <input
-                    type="datetime-local"
-                    name="plannedEnd"
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-              {formError && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-                  {formError}
-                </div>
-              )}
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-                >
-                  Crear
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open={showCreateModal}
+          onClose={() => { setShowCreateModal(false); setFormError(null); }}
+          title="Crear auditoría"
+          description="Registra una nueva auditoría en el sistema."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-audit-form">Crear auditoría</Button>
+            </>
+          }
+        >
+          {formError && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>
+          )}
+          <form id="create-audit-form" onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Código" name="code" required />
+              <Input label="Tipo de auditoría" name="auditType" placeholder="Interna, externa..." />
+            </div>
+            <Input label="Título" name="title" required />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Inicio planificado" name="plannedStart" type="datetime-local" />
+              <Input label="Fin planificado" name="plannedEnd" type="datetime-local" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Alcance</label>
+              <textarea
+                name="scope"
+                rows={2}
+                className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Objetivo</label>
+              <textarea
+                name="objective"
+                rows={2}
+                className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {selectedAudit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-4xl rounded-lg bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{selectedAudit.title} ({selectedAudit.code})</h2>
-              <button
-                onClick={() => setSelectedAudit(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="mt-4 flex gap-4 border-b border-gray-200">
-              <button
-                onClick={() => setDetailTab('details')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Detalles
-              </button>
-              <button
-                onClick={() => setDetailTab('checklists')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'checklists' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Listas de verificación
-              </button>
-              <button
-                onClick={() => setDetailTab('findings')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'findings' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Hallazgos
-              </button>
-            </div>
-            <div className="mt-4">
-              {detailTab === 'details' && (
-                <div className="space-y-2 text-sm">
-                  <p><strong>Code:</strong> {selectedAudit.code}</p>
-                  <p><strong>Title:</strong> {selectedAudit.title}</p>
-                  <p><strong>Status:</strong> {selectedAudit.status}</p>
-                  <p><strong>Scope:</strong> {selectedAudit.scope || '-'}</p>
-                  <p><strong>Objective:</strong> {selectedAudit.objective || '-'}</p>
-                </div>
-              )}
-              {detailTab === 'checklists' && (
-                <div className="space-y-2">
-                  {checklists.map((checklist) => (
-                    <div key={checklist.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                      <div className="font-medium">{checklist.name}</div>
-                      <div className="text-gray-500">{checklist.items?.length || 0} items</div>
-                    </div>
-                  ))}
-                  {checklists.length === 0 && (
-                    <div className="text-sm text-gray-500">No checklists found.</div>
-                  )}
-                </div>
-              )}
-              {detailTab === 'findings' && (
-                <div className="space-y-2">
-                  {findings.map((finding) => (
-                    <div key={finding.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                      <div className="font-medium">{finding.title}</div>
-                      <div className="text-gray-500">{finding.findingType} - {finding.severity} - {finding.status}</div>
-                    </div>
-                  ))}
-                  {findings.length === 0 && (
-                    <div className="text-sm text-gray-500">No findings found.</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
+        <Modal
+          open={!!selectedAudit}
+          onClose={() => setSelectedAudit(null)}
+          title={selectedAudit.title}
+          description={`${selectedAudit.code} · ${selectedAudit.status}`}
+          size="xl"
+          footer={
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {availableActions(selectedAudit.status).map((action) => {
                 const isDestructive = action === 'cancel';
-                const label = action.charAt(0).toUpperCase() + action.slice(1);
+                const label = ACTION_LABELS[action] || action;
                 return (
-                  <button
+                  <Button
                     key={action}
+                    variant={isDestructive ? 'danger' : 'secondary'}
+                    size="sm"
                     onClick={() => {
                       if (isDestructive) {
                         setPendingAction({ action, auditId: selectedAudit.id });
@@ -461,42 +369,105 @@ export function AuditsPage() {
                       }
                     }}
                     disabled={actionLoading === action}
-                    className={`rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 ${
-                      isDestructive
-                        ? 'border-red-300 bg-white text-red-700 hover:bg-red-50'
-                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
                   >
-                    {actionLoading === action ? 'Processing...' : label}
-                  </button>
+                    {actionLoading === action ? 'Procesando...' : label}
+                  </Button>
                 );
               })}
             </div>
+          }
+        >
+          <div className="-mx-1 mb-4">
+            <Tabs
+              tabs={[
+                { id: 'details', label: 'Detalles' },
+                { id: 'checklists', label: 'Listas de verificación' },
+                { id: 'findings', label: 'Hallazgos' },
+              ]}
+              activeTab={detailTab}
+              onChange={(t) => setDetailTab(t as Tab)}
+            />
           </div>
-        </div>
+
+          {detailTab === 'details' && (
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+              <Field label="Código" value={<span className="font-mono">{selectedAudit.code}</span>} />
+              <Field label="Estado" value={selectedAudit.status} />
+              <Field label="Alcance" value={selectedAudit.scope || '—'} />
+              <Field label="Objetivo" value={selectedAudit.objective || '—'} />
+            </dl>
+          )}
+
+          {detailTab === 'checklists' && (
+            checklists.length === 0 ? (
+              <p className="text-sm text-slate-500">No hay listas de verificación.</p>
+            ) : (
+              <Table
+                rowKey={(c) => c.id}
+                columns={[
+                  { key: 'name', header: 'Nombre', render: (c) => <span className="text-sm font-medium text-slate-900">{c.name}</span> },
+                  { key: 'items', header: 'Ítems', render: (c) => c.items?.length || 0 },
+                ]}
+                data={checklists}
+              />
+            )
+          )}
+
+          {detailTab === 'findings' && (
+            findings.length === 0 ? (
+              <p className="text-sm text-slate-500">No hay hallazgos registrados.</p>
+            ) : (
+              <Table
+                rowKey={(f) => f.id}
+                columns={[
+                  { key: 'title', header: 'Título', render: (f) => <span className="text-sm font-medium text-slate-900">{f.title}</span> },
+                  { key: 'type', header: 'Tipo', render: (f) => f.findingType },
+                  { key: 'severity', header: 'Severidad', render: (f) => f.severity },
+                  { key: 'status', header: 'Estado', render: (f) => f.status },
+                ]}
+                data={findings}
+              />
+            )
+          )}
+        </Modal>
       )}
 
       {pendingAction && (
         <ConfirmModal
           action={pendingAction.action}
-          resourceCode={selectedAudit?.code || 'this audit'}
-          resourceType="audit"
+          resourceCode={selectedAudit?.code || 'esta auditoría'}
+          resourceType="auditoría"
           onConfirm={handleConfirmedAction}
           onCancel={() => setPendingAction(null)}
+          variant={pendingAction.action === 'cancel' ? 'danger' : 'primary'}
           messages={{
             cancel: {
-              title: `Cancel audit?`,
-              message: `This will cancel "${selectedAudit?.code || 'this audit'}". This action may affect related workflows.`,
-              confirmText: 'Cancel',
+              title: '¿Cancelar auditoría?',
+              message: 'Esto cancelará la auditoría. Esta acción puede afectar los hallazgos y listas de verificación asociados.',
+              confirmText: 'Cancelar auditoría',
             },
-            obsolete: {
-              title: 'Mark as obsolete?',
-              message: `This will mark "${selectedAudit?.code || 'this audit'}" as obsolete. This action may affect active distributions.`,
-              confirmText: 'Obsolete',
+            complete: {
+              title: '¿Completar auditoría?',
+              message: 'Esto marcará la auditoría como completada.',
+              confirmText: 'Completar',
+            },
+            start: {
+              title: '¿Iniciar auditoría?',
+              message: 'Esto cambiará el estado de la auditoría a en progreso.',
+              confirmText: 'Iniciar',
             },
           }}
         />
       )}
+    </>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-slate-900">{children ?? value ?? '—'}</dd>
     </div>
   );
 }

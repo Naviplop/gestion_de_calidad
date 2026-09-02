@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { UserListItem, UserDetail } from '../lib/auth/auth.service';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
+import { Avatar } from '../components/ui/Avatar';
 
 export function UsersPage() {
   const [users, setUsers] = useState<UserListItem[]>([]);
@@ -48,120 +58,92 @@ export function UsersPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-        >
-          Crear Usuario
-        </button>
-      </div>
+    <>
+      <PageHeader
+        title="Usuarios"
+        description="Gestiona los usuarios de tu organización, asigna roles y estado."
+        breadcrumbs={[{ label: 'Administración', href: '/organization' }, { label: 'Usuarios' }]}
+        actions={
+          <Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nuevo usuario</Button>
+        }
+      />
 
-      {error && (
-        <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Buscar por nombre o correo..."
+              leftIcon="search"
+            />
+          </div>
+          <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
-      )}
 
-      <div className="mt-6 flex items-center gap-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Buscar usuarios..."
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-        <button
-          onClick={handleSearch}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Correo electrónico</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Departamento</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">MFA</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                  Cargando...
-                </td>
-              </tr>
-            ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                  No se encontraron usuarios.
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id}>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    {user.firstName} {user.lastName}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{user.email}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {user.department?.name || '-'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {user.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {user.mfaEnabled ? 'Habilitado' : 'Deshabilitado'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <button
-                      onClick={() => openEditUser(user)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                       Editar
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          onClick={() => setMeta((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-          disabled={meta.page <= 1}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
-        >
-           Anterior
-        </button>
-        <span className="text-sm text-gray-500">
-          Página {meta.page} de {meta.totalPages}
-        </span>
-        <button
-          onClick={() => setMeta((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-          disabled={meta.page >= meta.totalPages}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
-        >
-          Siguiente
-        </button>
+        {loading ? (
+          <LoadingState message="Cargando usuarios..." />
+        ) : users.length === 0 ? (
+          <EmptyState
+            icon="users"
+            title="No hay usuarios registrados"
+            description="Crea el primer usuario para comenzar a gestionar el acceso al sistema."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear usuario</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(u) => u.id}
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Usuario',
+                  render: (u) => (
+                    <div className="flex items-center gap-3">
+                      <Avatar name={`${u.firstName} ${u.lastName}`} email={u.email} size="sm" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                        <p className="truncate text-xs text-slate-500">{u.email}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                { key: 'department', header: 'Departamento', render: (u) => u.department?.name || '—' },
+                { key: 'status', header: 'Estado', width: '120px', render: (u) => <StatusPill status={u.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
+                {
+                  key: 'mfa',
+                  header: 'MFA',
+                  width: '100px',
+                  render: (u) => <StatusPill status={u.mfaEnabled ? 'ENABLED' : 'DISABLED'} />,
+                },
+                {
+                  key: 'actions',
+                  header: '',
+                  width: '100px',
+                  align: 'right',
+                  render: (u) => (
+                    <Button variant="ghost" size="sm" onClick={() => openEditUser(u)} leftIcon="edit">
+                      Editar
+                    </Button>
+                  ),
+                },
+              ]}
+              data={users}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
       </div>
 
       {showCreateModal && (
@@ -171,7 +153,7 @@ export function UsersPage() {
       {selectedUser && (
         <EditUserModal user={selectedUser} onClose={() => setSelectedUser(null)} onUpdated={loadUsers} />
       )}
-    </div>
+    </>
   );
 }
 
@@ -207,75 +189,37 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-gray-900">Crear Usuario</h2>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Correo electrónico</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-              minLength={12}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Apellido</label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="mfa"
-              checked={mfaEnabled}
-              onChange={(e) => setMfaEnabled(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <label htmlFor="mfa" className="text-sm font-medium text-gray-700">
-              Habilitar MFA
-            </label>
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white disabled:opacity-50">
-              {loading ? 'Creando...' : 'Crear'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal
+      open
+      onClose={onClose}
+      title="Crear usuario"
+      description="Registra un nuevo usuario en la organización."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" form="create-user-form" loading={loading}>Crear usuario</Button>
+        </>
+      }
+    >
+      {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <form id="create-user-form" onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input label="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} helperText="Mínimo 12 caracteres" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+        </div>
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={mfaEnabled}
+            onChange={(e) => setMfaEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900"
+          />
+          <span className="text-sm text-slate-700">Habilitar MFA</span>
+        </label>
+      </form>
+    </Modal>
   );
 }
 
@@ -302,53 +246,34 @@ function EditUserModal({ user, onClose, onUpdated }: { user: UserDetail; onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-gray-900">Editar Usuario</h2>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Apellido</label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="active"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <label htmlFor="active" className="text-sm font-medium text-gray-700">
-              Activo
-            </label>
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white disabled:opacity-50">
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal
+      open
+      onClose={onClose}
+      title="Editar usuario"
+      description={`${user.firstName} ${user.lastName} · ${user.email}`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" form="edit-user-form" loading={loading}>Guardar cambios</Button>
+        </>
+      }
+    >
+      {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <form id="edit-user-form" onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+        </div>
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900"
+          />
+          <span className="text-sm text-slate-700">Usuario activo</span>
+        </label>
+      </form>
+    </Modal>
   );
 }

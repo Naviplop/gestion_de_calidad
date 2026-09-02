@@ -2,42 +2,195 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+ * QMS DESIGN TOKENS — Premium Enterprise Design System
+ * ============================================================ */
+
 :root {
-  --qms-bg: #f8fafc;
+  /* ----- Surfaces ----- */
+  --qms-bg: #f6f8fa;
   --qms-surface: #ffffff;
+  --qms-surface-muted: #f8fafc;
   --qms-surface-elevated: #ffffff;
+  --qms-surface-hover: #f1f5f9;
+
+  /* ----- Borders ----- */
   --qms-border: #e2e8f0;
   --qms-border-subtle: #f1f5f9;
+  --qms-border-strong: #cbd5e1;
+
+  /* ----- Text ----- */
   --qms-text-primary: #0f172a;
   --qms-text-secondary: #475569;
   --qms-text-muted: #94a3b8;
+  --qms-text-inverse: #ffffff;
+
+  /* ----- Brand / Primary ----- */
   --qms-primary: #0f172a;
   --qms-primary-hover: #1e293b;
+  --qms-primary-soft: #f1f5f9;
+
+  /* ----- Accent (informational emphasis) ----- */
   --qms-accent: #2563eb;
   --qms-accent-hover: #1d4ed8;
-  --qms-success: #059669;
-  --qms-success-bg: #f0fdf4;
-  --qms-warning: #d97706;
+  --qms-accent-soft: #eff6ff;
+
+  /* ----- Semantic ----- */
+  --qms-success: #047857;
+  --qms-success-bg: #ecfdf5;
+  --qms-success-border: #a7f3d0;
+
+  --qms-warning: #b45309;
   --qms-warning-bg: #fffbeb;
-  --qms-danger: #dc2626;
+  --qms-warning-border: #fde68a;
+
+  --qms-danger: #b91c1c;
   --qms-danger-bg: #fef2f2;
-  --qms-info: #0284c7;
+  --qms-danger-border: #fecaca;
+
+  --qms-info: #0369a1;
   --qms-info-bg: #f0f9ff;
+  --qms-info-border: #bae6fd;
+
+  --qms-neutral-bg: #f1f5f9;
+  --qms-neutral-border: #cbd5e1;
+
+  /* ----- Layout ----- */
+  --qms-sidebar-width: 16rem; /* 256px */
+  --qms-header-height: 3.75rem; /* 60px */
+  --qms-page-max-width: 80rem; /* 1280px */
+
+  /* ----- Radii ----- */
+  --qms-radius-sm: 4px;
+  --qms-radius-md: 6px;
+  --qms-radius-lg: 8px;
+
+  /* ----- Shadows (sutiles, no decorativas) ----- */
+  --qms-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --qms-shadow-md: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --qms-shadow-lg: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+
+  /* ----- Motion ----- */
+  --qms-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --qms-duration-fast: 150ms;
+  --qms-duration: 200ms;
 }
 
+/* ============================================================
+ * BASE
+ * ============================================================ */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
 }
 
 body {
   background-color: var(--qms-bg);
   color: var(--qms-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
 }
 
+button {
+  font-family: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* ============================================================
+ * FOCUS RING (accesibilidad consistente)
+ * ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--qms-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--qms-accent);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================
+ * SCROLLBAR (sutil)
+ * ============================================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid var(--qms-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ============================================================
+ * UTILITIES
+ * ============================================================ */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Transición estándar para microinteracciones (150-250ms) */
+  .qms-transition {
+    transition: all var(--qms-duration) var(--qms-ease);
+  }
 }
+
+/* ============================================================
+ * ANIMATIONS
+ * ============================================================ */
+@keyframes qms-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes qms-fade-in-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qms-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes qms-slide-in-right {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in { animation: qms-fade-in var(--qms-duration) var(--qms-ease) both; }
+.animate-fade-in-up { animation: qms-fade-in-up var(--qms-duration) var(--qms-ease) both; }
+.animate-scale-in { animation: qms-scale-in var(--qms-duration) var(--qms-ease) both; }
+.animate-slide-in-right { animation: qms-slide-in-right var(--qms-duration) var(--qms-ease) both; }

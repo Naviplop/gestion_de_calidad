@@ -3,6 +3,17 @@ import { authApiClient } from '../lib/auth/auth.service';
 import type { Nonconformity, CorrectiveAction, RootCauseAnalysis } from '../lib/auth/auth.service';
 import { useToast } from '../components/Toast';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Modal } from '../components/ui/Modal';
+import { Tabs } from '../components/ui/Tabs';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
 
 type Tab = 'details' | 'root-cause' | 'actions';
 
@@ -39,7 +50,7 @@ export function NonconformitiesPage() {
       setNonconformities(response.data);
       setMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load nonconformities');
+      setError(err instanceof Error ? err.message : 'Error al cargar las no conformidades');
     } finally {
       setLoading(false);
     }
@@ -57,13 +68,11 @@ export function NonconformitiesPage() {
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
-    loadNonconformities();
   };
 
   const handleSeverityFilter = (value: string) => {
     setSeverityFilter(value);
     setMeta((prev) => ({ ...prev, page: 1 }));
-    loadNonconformities();
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,7 +99,7 @@ export function NonconformitiesPage() {
       showToast('No conformidad creada exitosamente', 'success');
       loadNonconformities();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create nonconformity');
+      setFormError(err instanceof Error ? err.message : 'Error al crear la no conformidad');
     }
   };
 
@@ -103,7 +112,7 @@ export function NonconformitiesPage() {
       setActions(response.data);
       setActionsMeta(response.meta);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load corrective actions');
+      setError(err instanceof Error ? err.message : 'Error al cargar las acciones correctivas');
     }
   };
 
@@ -124,7 +133,7 @@ export function NonconformitiesPage() {
       await loadRootCause(nonconformityId);
       await loadActions(nonconformityId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load nonconformity detail');
+      setError(err instanceof Error ? err.message : 'Error al cargar la no conformidad');
     }
   };
 
@@ -148,344 +157,276 @@ export function NonconformitiesPage() {
       }
       loadNonconformities();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to close nonconformity';
+      const message = err instanceof Error ? err.message : 'Error al cerrar la no conformidad';
       setError(message);
-      if (message.includes('RootCauseRequired') || message.includes('AllActionsMustBeVerified')) {
-        showToast('Cannot close: ensure root cause exists and all actions are verified', 'error');
-      } else {
-        showToast(message, 'error');
-      }
+      showToast(message, 'error');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const severityColor = (severity: string) => {
-    const colors: Record<string, string> = {
-      MAJOR: 'bg-orange-100 text-orange-800',
-      MINOR: 'bg-yellow-100 text-yellow-800',
-      CRITICAL: 'bg-red-100 text-red-800',
-    };
-    return colors[severity] || 'bg-gray-100 text-gray-800';
-  };
-
-  const statusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      OPEN: 'bg-blue-100 text-blue-800',
-      CLOSED: 'bg-green-100 text-green-800',
-      VERIFICATION: 'bg-yellow-100 text-yellow-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const canClose = (nc: Nonconformity) => {
-    if (nc.status === 'CLOSED') return false;
-    return true;
-  };
+  const canClose = (nc: Nonconformity) => nc.status !== 'CLOSED';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">No conformidades</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestiona no conformidades y acciones correctivas.
-          </p>
+    <>
+      <PageHeader
+        title="No conformidades"
+        description="Gestiona no conformidades, análisis de causa raíz y acciones correctivas."
+        breadcrumbs={[{ label: 'Principal', href: '/' }, { label: 'No conformidades' }]}
+        actions={
+          <Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nueva no conformidad</Button>
+        }
+      />
+
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Buscar por código o título..."
+              leftIcon="search"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilter(e.target.value)}
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'OPEN', label: 'Abierta' },
+                { value: 'VERIFICATION', label: 'En verificación' },
+                { value: 'CLOSED', label: 'Cerrada' },
+              ]}
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select
+              value={severityFilter}
+              onChange={(e) => handleSeverityFilter(e.target.value)}
+              options={[
+                { value: '', label: 'Todas las severidades' },
+                { value: 'MAJOR', label: 'Mayor' },
+                { value: 'MINOR', label: 'Menor' },
+                { value: 'CRITICAL', label: 'Crítica' },
+              ]}
+            />
+          </div>
+          <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-        >
-          Crear no conformidad
-        </button>
-      </div>
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-800">
-          {error}
-        </div>
-      )}
-
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Buscar no conformidades..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => handleStatusFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-        <option value="">Todos los estados</option>
-        <option value="OPEN">Abierta</option>
-        <option value="VERIFICATION">Verificación</option>
-        <option value="CLOSED">Cerrada</option>
-        </select>
-        <select
-          value={severityFilter}
-          onChange={(e) => handleSeverityFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-        <option value="">Todas las severidades</option>
-        <option value="MAJOR">Mayor</option>
-        <option value="MINOR">Menor</option>
-        <option value="CRITICAL">Crítica</option>
-        </select>
-        <button
-          onClick={handleSearch}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="text-center text-sm text-slate-500">Cargando...</div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Code</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Severidad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {nonconformities.map((nc) => (
-                <tr key={nc.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    <button
-                      onClick={() => openDetail(nc.id)}
-                      className="hover:underline"
-                    >
-                      {nc.code}
-                    </button>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {nc.title}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${severityColor(nc.severity)}`}>
-                      {nc.severity}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColor(nc.status)}`}>
-                      {nc.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {canClose(nc) ? (
-                      <button
-                        onClick={() => handleClose(nc.id)}
-                        disabled={actionLoading === 'close'}
-                        className="text-green-600 hover:text-green-800 disabled:opacity-50"
-                      >
-                        {actionLoading === 'close' ? 'Cerrando...' : 'Cerrar'}
-                      </button>
+        {loading ? (
+          <LoadingState message="Cargando no conformidades..." />
+        ) : nonconformities.length === 0 ? (
+          <EmptyState
+            icon="warning"
+            title="No hay no conformidades registradas"
+            description="Registra la primera no conformidad para iniciar el ciclo de análisis y acciones correctivas."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear no conformidad</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(nc) => nc.id}
+              columns={[
+                { key: 'code', header: 'Código', width: '140px', render: (nc) => <span className="font-mono text-sm font-semibold text-slate-900">{nc.code}</span> },
+                {
+                  key: 'title',
+                  header: 'Título',
+                  render: (nc) => (
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-900">{nc.title}</p>
+                      <p className="truncate text-xs text-slate-500">{nc.description}</p>
+                    </div>
+                  ),
+                },
+                { key: 'severity', header: 'Severidad', width: '120px', render: (nc) => <StatusPill status={nc.severity} /> },
+                { key: 'status', header: 'Estado', width: '160px', render: (nc) => <StatusPill status={nc.status} /> },
+                {
+                  key: 'actions',
+                  header: '',
+                  width: '120px',
+                  align: 'right',
+                  render: (nc) =>
+                    canClose(nc) ? (
+                      <Button variant="secondary" size="sm" onClick={() => handleClose(nc.id)} loading={actionLoading === 'close'}>
+                        Cerrar
+                      </Button>
                     ) : (
                       <span className="text-xs text-slate-400">Cerrada</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    ),
+                },
+              ]}
+              data={nonconformities}
+              onRowClick={(nc) => openDetail(nc.id)}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
+      </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h2 className="text-lg font-semibold">Crear no conformidad</h2>
-            <form onSubmit={handleCreate} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Code</label>
-                <input
-                  type="text"
-                  name="code"
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Severidad</label>
-                  <select
-                    name="severity"
-                    required
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  >
-                    <option value="MAJOR">Major</option>
-                    <option value="MINOR">Minor</option>
-                    <option value="CRITICAL">Critical</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Detected At</label>
-                  <input
-                    type="date"
-                    name="detectedAt"
-                    required
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-              {formError && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-                  {formError}
-                </div>
-              )}
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-                >
-                  Crear
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open={showCreateModal}
+          onClose={() => { setShowCreateModal(false); setFormError(null); }}
+          title="Crear no conformidad"
+          description="Registra una nueva no conformidad en el sistema."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-nc-form">Crear no conformidad</Button>
+            </>
+          }
+        >
+          {formError && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>
+          )}
+          <form id="create-nc-form" onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Código" name="code" required />
+              <Input label="Fecha de detección" name="detectedAt" type="date" required />
+            </div>
+            <Input label="Título" name="title" required />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea
+                name="description"
+                rows={3}
+                required
+                className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select
+                label="Severidad"
+                name="severity"
+                required
+                defaultValue="MINOR"
+                options={[
+                  { value: 'MINOR', label: 'Menor' },
+                  { value: 'MAJOR', label: 'Mayor' },
+                  { value: 'CRITICAL', label: 'Crítica' },
+                ]}
+              />
+              <Input label="ID responsable" name="responsibleId" />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {selectedNonconformity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-4xl rounded-lg bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{selectedNonconformity.code} - {selectedNonconformity.title}</h2>
-              <button
-                onClick={() => setSelectedNonconformity(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="mt-4 flex gap-4 border-b border-gray-200">
-              <button
-                onClick={() => setDetailTab('details')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'details' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Detalles
-              </button>
-              <button
-                onClick={() => setDetailTab('root-cause')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'root-cause' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Causa raíz
-              </button>
-              <button
-                onClick={() => setDetailTab('actions')}
-                className={`pb-2 text-sm font-medium ${detailTab === 'actions' ? 'border-b-2 border-gray-900 text-gray-900' : 'text-gray-500'}`}
-              >
-                Acciones correctivas
-              </button>
-            </div>
-            <div className="mt-4">
-              {detailTab === 'details' && (
-                <div className="space-y-2 text-sm">
-                  <p><strong>Code:</strong> {selectedNonconformity.code}</p>
-                  <p><strong>Title:</strong> {selectedNonconformity.title}</p>
-                  <p><strong>Description:</strong> {selectedNonconformity.description}</p>
-                  <p><strong>Severidad:</strong> {selectedNonconformity.severity}</p>
-                  <p><strong>Estado:</strong> {selectedNonconformity.status}</p>
-                  <p><strong>Detected At:</strong> {selectedNonconformity.detectedAt ? new Date(selectedNonconformity.detectedAt).toLocaleDateString() : '-'}</p>
-                </div>
-              )}
-              {detailTab === 'root-cause' && (
-                <div className="space-y-2 text-sm">
-                  {rootCause ? (
-                    <>
-                      <p><strong>Methodology:</strong> {rootCause.methodology}</p>
-                      <p><strong>Conclusion:</strong> {rootCause.conclusion || '-'}</p>
-                      <pre className="mt-2 rounded-md bg-gray-50 p-3 text-xs">
-                        {JSON.stringify(rootCause.analysisData, null, 2)}
-                      </pre>
-                    </>
-                  ) : (
-                    <div className="text-sm text-gray-500">No root cause analysis found.</div>
-                  )}
-                </div>
-              )}
-              {detailTab === 'actions' && (
-                <div className="space-y-2">
-                  {actions.map((action) => (
-                    <div key={action.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                      <div className="font-medium">{action.code} - {action.description}</div>
-                      <div className="text-gray-500">{action.status} - Due: {action.dueDate ? new Date(action.dueDate).toLocaleDateString() : '-'}</div>
-                    </div>
-                  ))}
-                  {actions.length === 0 && (
-                    <div className="text-sm text-gray-500">No corrective actions found.</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              {canClose(selectedNonconformity) && (
-                <button
-                  onClick={() => handleClose()}
-                  disabled={actionLoading === 'close'}
-                  className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
-                >
-                  {actionLoading === 'close' ? 'Cerrando...' : 'Cerrar no conformidad'}
-                </button>
-              )}
-            </div>
+        <Modal
+          open={!!selectedNonconformity}
+          onClose={() => setSelectedNonconformity(null)}
+          title={selectedNonconformity.title}
+          description={`${selectedNonconformity.code} · ${selectedNonconformity.status}`}
+          size="xl"
+          footer={
+            canClose(selectedNonconformity) ? (
+              <Button onClick={() => handleClose()} loading={actionLoading === 'close'}>
+                Cerrar no conformidad
+              </Button>
+            ) : null
+          }
+        >
+          <div className="-mx-1 mb-4">
+            <Tabs
+              tabs={[
+                { id: 'details', label: 'Detalles' },
+                { id: 'root-cause', label: 'Causa raíz' },
+                { id: 'actions', label: 'Acciones correctivas' },
+              ]}
+              activeTab={detailTab}
+              onChange={(t) => setDetailTab(t as Tab)}
+            />
           </div>
-        </div>
+
+          {detailTab === 'details' && (
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+              <Field label="Código" value={<span className="font-mono">{selectedNonconformity.code}</span>} />
+              <Field label="Estado" value={<StatusPill status={selectedNonconformity.status} />} />
+              <Field label="Severidad" value={<StatusPill status={selectedNonconformity.severity} />} />
+              <Field label="Fecha de detección" value={selectedNonconformity.detectedAt ? new Date(selectedNonconformity.detectedAt).toLocaleDateString('es-ES') : '—'} />
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">Descripción</dt>
+                <dd className="mt-0.5 text-sm text-slate-900">{selectedNonconformity.description}</dd>
+              </div>
+            </dl>
+          )}
+
+          {detailTab === 'root-cause' && (
+            rootCause ? (
+              <div className="space-y-3 text-sm">
+                <Field label="Metodología" value={rootCause.methodology} />
+                <Field label="Conclusión" value={rootCause.conclusion || '—'} />
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-500">Datos del análisis</p>
+                  <pre className="overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                    {JSON.stringify(rootCause.analysisData, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No hay análisis de causa raíz registrado.</p>
+            )
+          )}
+
+          {detailTab === 'actions' && (
+            actions.length === 0 ? (
+              <p className="text-sm text-slate-500">No hay acciones correctivas registradas.</p>
+            ) : (
+              <Table
+                rowKey={(a) => a.id}
+                columns={[
+                  { key: 'code', header: 'Código', render: (a) => <span className="font-mono text-xs">{a.code}</span> },
+                  { key: 'desc', header: 'Descripción', render: (a) => a.description },
+                  { key: 'status', header: 'Estado', render: (a) => <StatusPill status={a.status} /> },
+                  { key: 'due', header: 'Vencimiento', render: (a) => a.dueDate ? new Date(a.dueDate).toLocaleDateString('es-ES') : '—' },
+                ]}
+                data={actions}
+              />
+            )
+          )}
+        </Modal>
       )}
 
       {pendingAction && (
         <ConfirmModal
-          action={pendingAction.action}
-          resourceCode={selectedNonconformity?.code || 'this nonconformity'}
-          resourceType="nonconformity"
+          action="close"
+          resourceCode={selectedNonconformity?.code || 'esta no conformidad'}
+          resourceType="no conformidad"
           onConfirm={handleConfirmedClose}
           onCancel={() => setPendingAction(null)}
-          confirmButtonClassName="bg-green-600 hover:bg-green-500"
+          variant="primary"
           messages={{
             close: {
               title: '¿Cerrar no conformidad?',
-              message: `This will close "${selectedNonconformity?.code || 'this nonconformity'}". Ensure all root cause analyses are completed and corrective actions are verified.`,
-              confirmText: 'Cerrar',
+              message: 'Asegúrate de que el análisis de causa raíz esté completo y las acciones correctivas estén verificadas.',
+              confirmText: 'Cerrar no conformidad',
             },
           }}
         />
       )}
+    </>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-slate-900">{children ?? value ?? '—'}</dd>
     </div>
   );
 }

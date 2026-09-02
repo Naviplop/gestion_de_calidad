@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -14,12 +16,10 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-
     if (!email || !password) {
       setLocalError('El correo electrónico y la contraseña son obligatorios.');
       return;
     }
-
     try {
       await onSubmit(email, password);
     } catch {
@@ -28,50 +28,37 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
-          Correo electrónico
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
-          placeholder="usuario@empresa.com"
-          autoComplete="email"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
-          Contraseña
-        </label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
-          placeholder="••••••••••••"
-          autoComplete="current-password"
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        id="email"
+        label="Correo electrónico"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="usuario@empresa.com"
+        autoComplete="email"
+        required
+      />
+      <Input
+        id="password"
+        label="Contraseña"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••••••"
+        autoComplete="current-password"
+        required
+      />
 
       {(error || localError) && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {localError || error}
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {isLoading ? 'Verificando...' : 'Iniciar sesión'}
-      </button>
+      <Button type="submit" className="w-full" loading={isLoading}>
+        Iniciar sesión
+      </Button>
     </form>
   );
 }

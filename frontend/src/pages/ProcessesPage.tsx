@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
 import type { Process, ProcessListItem } from '../lib/auth/auth.service';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Modal } from '../components/ui/Modal';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Table } from '../components/ui/Table';
+import { Pagination } from '../components/ui/Pagination';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusPill } from '../components/ui/StatusPill';
 
 export function ProcessesPage() {
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
@@ -98,166 +108,129 @@ export function ProcessesPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Procesos</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-        >
-          Crear Proceso
-        </button>
-      </div>
+    <>
+      <PageHeader
+        title="Procesos"
+        description="Catálogo de procesos del sistema de gestión de calidad."
+        breadcrumbs={[{ label: 'Administración' }, { label: 'Procesos' }]}
+        actions={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Nuevo proceso</Button>}
+      />
 
-      {error && (
-        <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+      <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-5 sm:px-6 lg:px-8">
+        {error && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-xs">
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Buscar por nombre o código..." leftIcon="search" />
+          </div>
+          <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
-      )}
 
-      <div className="mt-6 flex items-center gap-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Buscar procesos..."
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-        <button
-          onClick={handleSearch}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Código</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                   Cargando...
-                </td>
-              </tr>
-            ) : processes.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                  No se encontraron procesos.
-                </td>
-              </tr>
-            ) : (
-              processes.map((proc) => (
-                <tr key={proc.id}>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{proc.code}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{proc.name}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{proc.processType || '-'}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${proc.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {proc.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <button
-                      onClick={() => authApiClient.getProcess(proc.id).then(r => setSelectedProcess(r.data))}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Editar
-                    </button>
-                    {proc.isActive && (
-                      <button
-                        onClick={() => handleDeactivate(proc.id)}
-                        className="ml-4 text-red-600 hover:text-red-900"
-                      >
-                        Desactivar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        {loading ? (
+          <LoadingState message="Cargando procesos..." />
+        ) : processes.length === 0 ? (
+          <EmptyState
+            icon="cog"
+            title="No hay procesos registrados"
+            description="Crea el primer proceso del sistema de gestión."
+            action={<Button onClick={() => setShowCreateModal(true)} leftIcon="plus">Crear proceso</Button>}
+          />
+        ) : (
+          <>
+            <Table
+              rowKey={(p) => p.id}
+              columns={[
+                { key: 'code', header: 'Código', width: '120px', render: (p) => <span className="font-mono text-xs font-semibold text-slate-900">{p.code}</span> },
+                { key: 'name', header: 'Nombre', render: (p) => <span className="text-sm font-medium text-slate-900">{p.name}</span> },
+                { key: 'type', header: 'Tipo', render: (p) => p.processType || '—' },
+                { key: 'status', header: 'Estado', width: '120px', render: (p) => <StatusPill status={p.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
+                {
+                  key: 'actions', header: '', align: 'right', width: '180px',
+                  render: (p) => (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => authApiClient.getProcess(p.id).then((r) => setSelectedProcess(r.data))} leftIcon="edit">Editar</Button>
+                      {p.isActive && <Button variant="ghost" size="sm" onClick={() => handleDeactivate(p.id)}>Desactivar</Button>}
+                    </div>
+                  ),
+                },
+              ]}
+              data={processes}
+            />
+            <Pagination
+              page={meta.page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              onPageChange={(p) => setMeta((prev) => ({ ...prev, page: p }))}
+              className="rounded-b-lg"
+            />
+          </>
+        )}
       </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold">Crear Proceso</h2>
-            {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleCreate}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Código</label>
-                <input name="code" required maxLength={50} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                <input name="name" required maxLength={255} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
-                <textarea name="description" maxLength={1000} rows={3} defaultValue={selectedProcess?.description || ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Tipo de Proceso</label>
-                <input name="processType" maxLength={50} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { setShowCreateModal(false); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Crear</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setShowCreateModal(false); setFormError(null); }}
+          title="Crear proceso"
+          description="Registra un nuevo proceso del sistema de gestión."
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setShowCreateModal(false); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="create-process-form">Crear proceso</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="create-process-form" onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Código" name="code" required maxLength={50} />
+              <Input label="Tipo de proceso" name="processType" maxLength={50} />
+            </div>
+            <Input label="Nombre" name="name" required maxLength={255} />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" maxLength={1000} rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {selectedProcess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold">Editar Proceso</h2>
-            {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{formError}</div>}
-            <form onSubmit={handleUpdate}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Código</label>
-                <input name="code" required maxLength={50} defaultValue={selectedProcess.code} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                <input name="name" required maxLength={255} defaultValue={selectedProcess.name} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
-                <textarea name="description" maxLength={1000} rows={3} defaultValue={selectedProcess?.description || ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Tipo de Proceso</label>
-                <input name="processType" maxLength={50} defaultValue={selectedProcess.processType || ''} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Activo</label>
-                <select name="isActive" defaultValue={selectedProcess.isActive ? 'true' : 'false'} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option value="true">Activo</option>
-                  <option value="false">Inactivo</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { setSelectedProcess(null); setFormError(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500">Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => { setSelectedProcess(null); setFormError(null); }}
+          title="Editar proceso"
+          description={`${selectedProcess.code} · ${selectedProcess.name}`}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => { setSelectedProcess(null); setFormError(null); }}>Cancelar</Button>
+              <Button type="submit" form="edit-process-form">Guardar cambios</Button>
+            </>
+          }
+        >
+          {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <form id="edit-process-form" onSubmit={handleUpdate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input label="Código" name="code" required maxLength={50} defaultValue={selectedProcess.code} />
+              <Input label="Tipo de proceso" name="processType" maxLength={50} defaultValue={selectedProcess.processType || ''} />
+            </div>
+            <Input label="Nombre" name="name" required maxLength={255} defaultValue={selectedProcess.name} />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea name="description" maxLength={1000} rows={3} defaultValue={selectedProcess.description || ''} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+            </div>
+            <Select
+              label="Estado"
+              name="isActive"
+              defaultValue={selectedProcess.isActive ? 'true' : 'false'}
+              options={[
+                { value: 'true', label: 'Activo' },
+                { value: 'false', label: 'Inactivo' },
+              ]}
+            />
+          </form>
+        </Modal>
       )}
-    </div>
+    </>
   );
 }

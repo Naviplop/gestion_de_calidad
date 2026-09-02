@@ -3,6 +3,7 @@ interface Column<T> {
   header: string;
   render?: (item: T) => React.ReactNode;
   width?: string;
+  align?: 'left' | 'right' | 'center';
 }
 
 interface TableProps<T> {
@@ -11,9 +12,17 @@ interface TableProps<T> {
   loading?: boolean;
   emptyState?: React.ReactNode;
   onRowClick?: (item: T) => void;
+  rowKey?: (item: T) => string;
+  className?: string;
 }
 
-export function Table<T>({ columns, data, loading, emptyState, onRowClick }: TableProps<T>) {
+const alignMap = {
+  left: 'text-left',
+  right: 'text-right',
+  center: 'text-center',
+};
+
+export function Table<T>({ columns, data, loading, emptyState, onRowClick, rowKey, className = '' }: TableProps<T>) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -27,16 +36,17 @@ export function Table<T>({ columns, data, loading, emptyState, onRowClick }: Tab
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white ${className}`}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-100">
+        <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
+                  scope="col"
                   style={{ width: column.width }}
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"
+                  className={`px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 ${alignMap[column.align || 'left']}`}
                 >
                   {column.header}
                 </th>
@@ -46,12 +56,15 @@ export function Table<T>({ columns, data, loading, emptyState, onRowClick }: Tab
           <tbody className="divide-y divide-slate-100 bg-white">
             {data.map((item, idx) => (
               <tr
-                key={idx}
-                className={`transition-colors ${onRowClick ? 'cursor-pointer hover:bg-slate-50/50' : ''}`}
+                key={rowKey ? rowKey(item) : idx}
+                className={`qms-transition ${onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50/50'}`}
                 onClick={() => onRowClick?.(item)}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td
+                    key={column.key}
+                    className={`whitespace-nowrap px-4 py-3 text-sm text-slate-700 ${alignMap[column.align || 'left']}`}
+                  >
                     {column.render ? column.render(item) : (item as unknown as Record<string, unknown>)[column.key] as string}
                   </td>
                 ))}
