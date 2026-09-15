@@ -176,14 +176,24 @@ export function DepartmentsPage() {
           }
         >
           {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
-          <form id="create-dept-form" onSubmit={handleCreate} className="space-y-4">
-            <Input label="Nombre" name="name" required maxLength={150} />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
-              <textarea name="description" maxLength={500} rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
-            </div>
-            <Input label="ID del departamento superior" name="parentDepartmentId" />
-          </form>
+           <form id="create-dept-form" onSubmit={handleCreate} className="space-y-4">
+             <Input label="Nombre" name="name" required maxLength={150} placeholder="Ej. Control Documental" helperText="Nombre del departamento" />
+             <div>
+               <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+               <textarea name="description" maxLength={500} rows={3} placeholder="Describe el propósito y alcance del departamento" className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+             </div>
+             <Select
+               label="Departamento superior"
+               name="parentDepartmentId"
+               defaultValue=""
+               placeholder="Sin departamento superior (raíz)"
+               options={[
+                 { value: '', label: 'Sin departamento superior' },
+                 ...departments.map((d) => ({ value: d.id, label: d.name })),
+               ]}
+               helperText="Opcional. Selecciona el departamento padre si existe jerarquía."
+             />
+           </form>
         </Modal>
       )}
 
@@ -202,11 +212,22 @@ export function DepartmentsPage() {
         >
           {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
           <form id="edit-dept-form" onSubmit={handleUpdate} className="space-y-4">
-            <Input label="Nombre" name="name" required maxLength={150} defaultValue={selectedDepartment.name} />
+            <Input label="Nombre" name="name" required maxLength={150} defaultValue={selectedDepartment.name} helperText="Nombre del departamento" />
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
-              <textarea name="description" maxLength={500} rows={3} defaultValue={selectedDepartment.description || ''} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
+              <textarea name="description" maxLength={500} rows={3} defaultValue={selectedDepartment.description || ''} placeholder="Describe el propósito y alcance del departamento" className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
             </div>
+            <Select
+              label="Departamento superior"
+              name="parentDepartmentId"
+              defaultValue={selectedDepartment.parentDepartmentId || ''}
+              placeholder="Sin departamento superior"
+              options={[
+                { value: '', label: 'Sin departamento superior' },
+                ...departments.filter((d) => d.id !== selectedDepartment.id).map((d) => ({ value: d.id, label: d.name })),
+              ]}
+              helperText="Opcional. Selecciona el departamento padre si existe jerarquía."
+            />
             <Select
               label="Estado"
               name="isActive"

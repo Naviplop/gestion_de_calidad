@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
-import type { AuditProgram, AuditProgramListItem, AuditListItem } from '../lib/auth/auth.service';
+import type { AuditProgram, AuditProgramListItem, AuditListItem, UserListItem } from '../lib/auth/auth.service';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -28,6 +28,7 @@ export function AuditProgramsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [audits, setAudits] = useState<AuditListItem[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [users, setUsers] = useState<Array<{ id: string; label: string }>>([]);
 
   const loadPrograms = useCallback(async () => {
     setLoading(true);
@@ -51,6 +52,18 @@ export function AuditProgramsPage() {
   useEffect(() => {
     loadPrograms();
   }, [loadPrograms]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await authApiClient.listUsers({ page: 1, pageSize: 100, isActive: true });
+        setUsers(res.data.map((u: UserListItem) => ({ id: u.id, label: `${u.firstName} ${u.lastName}` })));
+      } catch {
+        // ignore
+      }
+    };
+    loadUsers();
+  }, []);
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
@@ -252,7 +265,14 @@ export function AuditProgramsPage() {
               <Input label="Inicio del período" name="periodStart" type="date" required />
               <Input label="Fin del período" name="periodEnd" type="date" required />
             </div>
-            <Input label="ID responsable" name="responsibleId" />
+            <Select
+              label="Responsable"
+              name="responsibleId"
+              defaultValue=""
+              placeholder="Selecciona una persona"
+              options={[{ value: '', label: 'Selecciona una persona' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+              helperText="Persona que liderará el programa de auditoría"
+            />
           </form>
         </Modal>
       )}

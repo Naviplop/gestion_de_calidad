@@ -332,11 +332,25 @@ export interface FileAssetMetadata {
   id: string;
   originalFilename: string;
   mimeType: string;
-  sizeBytes: bigint;
+  sizeBytes: string;
   sha256Hash: string;
   storageProvider: string;
   objectKey: string;
   createdAt: string;
+}
+
+export interface NotificationListItem {
+  id: string;
+  organizationId: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  entityType: string | null;
+  entityId: string | null;
+  readAt: Date | null;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export class AuthApiClient {
@@ -398,6 +412,11 @@ export class AuthApiClient {
       return undefined as T;
     }
 
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === '0' || !response.body) {
+      return undefined as T;
+    }
+
     return await response.json() as Promise<T>;
   }
 
@@ -455,6 +474,11 @@ export class AuthApiClient {
     }
 
     if (response.status === 204) {
+      return undefined as T;
+    }
+
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === '0' || !response.body) {
       return undefined as T;
     }
 
@@ -802,6 +826,10 @@ export class AuthApiClient {
     return this.request(`/documents${query ? `?${query}` : ''}`);
   }
 
+  async listDocumentTypes(): Promise<{ data: DocumentType[] }> {
+    return this.request('/document-types');
+  }
+
   async createDocument(data: {
     code: string;
     title: string;
@@ -972,6 +1000,11 @@ export class AuthApiClient {
       throw new Error(error.error?.message || `HTTP ${response.status}`);
     }
 
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === '0' || !response.body) {
+      return { data: {} as FileAssetMetadata };
+    }
+
     const json = (await response.json()) as { data?: FileAssetMetadata };
     if (json && typeof json === 'object' && 'data' in json && json.data) {
       return json as { data: FileAssetMetadata };
@@ -985,6 +1018,32 @@ export class AuthApiClient {
 
   async downloadFileAsset(id: string): Promise<Blob> {
     const response = await fetch(`${API_BASE_URL}/file-assets/${id}/download`, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (response.status === 403) {
+      throw new Error('FORBIDDEN');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        error: { message: 'Unknown error' },
+      }));
+      throw new Error(error.error?.message || `HTTP ${response.status}`);
+    }
+
+    return response.blob();
+  }
+
+  async previewFileAsset(id: string): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/file-assets/${id}/preview`, {
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
       },
@@ -1580,6 +1639,23 @@ export class AuthApiClient {
 
     const query = queryParams.toString();
     return this.request(`/security-events${query ? `?${query}` : ''}`);
+  }
+
+  async listNotifications(params: {
+    page?: number;
+    pageSize?: number;
+    unreadOnly?: boolean;
+  }): Promise<{ data: NotificationListItem[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.set('page', String(params.page));
+    if (params.pageSize) queryParams.set('pageSize', String(params.pageSize));
+    if (params.unreadOnly) queryParams.set('unreadOnly', 'true');
+    const query = queryParams.toString();
+    return this.request(`/notifications${query ? `?${query}` : ''}`);
+  }
+
+  async unreadCount(): Promise<{ count: number }> {
+    return this.request('/notifications/unread-count');
   }
 }
 

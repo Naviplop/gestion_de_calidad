@@ -134,11 +134,12 @@ export class AuthService {
       metadata: { sessionId: session.sessionId },
     });
 
-    const tokens = this.issueTokens(user, ipAddress, userAgent);
-    return {
+    const tokens = await this.issueTokens(user, ipAddress, userAgent);
+    const result = {
       ...tokens,
       sessionId: randomUUID(),
     };
+    return result;
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string, ipAddress?: string, userAgent?: string) {
@@ -390,7 +391,7 @@ export class AuthService {
 
     const organization = await this.prisma.organization.findFirst({
       where: { id: organizationId },
-      select: { name: true },
+      select: { name: true, logoUrl: true },
     });
 
     const userRoles = await this.prisma.userRole.findMany({
@@ -411,6 +412,7 @@ export class AuthService {
       tenant: {
         organizationId,
         name: organization?.name ?? '',
+        logoUrl: organization?.logoUrl ?? null,
       },
       roles,
     };
@@ -433,7 +435,7 @@ export class AuthService {
 
     const organization = await this.prisma.organization.findFirst({
       where: { id: user.organizationId },
-      select: { name: true },
+      select: { name: true, logoUrl: true },
     });
 
     const userRoles = await this.prisma.userRole.findMany({
@@ -470,6 +472,7 @@ export class AuthService {
         tenant: {
           organizationId: user.organizationId,
           name: organization?.name ?? '',
+          logoUrl: organization?.logoUrl ?? null,
         },
         roles,
       },

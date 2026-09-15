@@ -1,5 +1,5 @@
-import { Controller, Post, Body, Param, Get, UseGuards, Req, Query, UseInterceptors, UploadedFile as NestUploadedFile } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Post, Body, Param, Get, UseGuards, Req, Query, UseInterceptors, Res, UploadedFile as NestUploadedFile } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { FileAssetService, UploadedFile } from '../services/file-asset.service';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
@@ -73,11 +73,69 @@ export class FileAssetsController {
   @Get(':id/download')
   @RequirePermission('files:download')
   @RequireResourceOwnership({ resourceType: 'fileAsset', resourceIdParam: 'id' })
-  async download(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  async download(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ): Promise<void> {
     const storageRoot = this.configService.get<string>('STORAGE_ROOT', './storage');
     const adapter = new LocalFileStorageAdapter(storageRoot);
 
-    return this.fileAssetService.download(id, req.organizationId, adapter);
+    const { stream, metadata } = await this.fileAssetService.download(id, req.organizationId, adapter);
+    if (res.headersSent) return;
+    res.setHeader('Content-Type', metadata.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(metadata.originalFilename)}"`);
+    res.setHeader('Content-Length', metadata.sizeBytes.toString());
+    res.setHeader('Cache-Control', 'private, no-store');
+
+    try {
+      for await (const chunk of stream) {
+        if (!res.write(Buffer.from(chunk))) {
+          await new Promise<void>((resolve) => res.once('drain', resolve));
+        }
+      }
+      res.end();
+    } catch {
+      if (!res.headersSent) {
+        res.status(500).end();
+      } else {
+        res.destroy();
+      }
+    }
+  }
+
+  @Get(':id/preview')
+  @RequirePermission('files:read')
+  @RequireResourceOwnership({ resourceType: 'fileAsset', resourceIdParam: 'id' })
+  async preview(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ): Promise<void> {
+    const storageRoot = this.configService.get<string>('STORAGE_ROOT', './storage');
+    const adapter = new LocalFileStorageAdapter(storageRoot);
+
+    const { stream, metadata } = await this.fileAssetService.download(id, req.organizationId, adapter);
+    if (res.headersSent) return;
+    res.setHeader('Content-Type', metadata.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(metadata.originalFilename)}"`);
+    res.setHeader('Content-Length', metadata.sizeBytes.toString());
+    res.setHeader('Cache-Control', 'private, max-age=300');
+
+    try {
+      for await (const chunk of stream) {
+        if (!res.write(Buffer.from(chunk))) {
+          await new Promise<void>((resolve) => res.once('drain', resolve));
+        }
+      }
+      res.end();
+    } catch {
+      if (!res.headersSent) {
+        res.status(500).end();
+      } else {
+        res.destroy();
+      }
+    }
   }
 
   @Get(':id/verify')

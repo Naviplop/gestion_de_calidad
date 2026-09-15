@@ -1,6 +1,6 @@
 {
   "name": "qms-backend",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "QMS Platform Backend — NestJS + Prisma + PostgreSQL",
   "main": "dist/main.js",
   "prisma": {

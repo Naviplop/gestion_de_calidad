@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTenantBranding } from '../../lib/branding/useTenantBranding';
 import { Icon } from './Icon';
 import { Avatar } from './Avatar';
 
@@ -47,6 +48,7 @@ const navigation: NavGroup[] = [
 
 export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const { user, logout } = useAuth();
+  const branding = useTenantBranding();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -56,7 +58,8 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   };
 
   const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Usuario';
-  const orgName = user?.tenant?.name || 'Sin organización';
+  const orgName = branding.organizationName;
+  const orgLogo = branding.logoUrl;
 
   return (
     <aside
@@ -65,11 +68,19 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
     >
       {/* Brand */}
       <div className="flex h-[60px] items-center gap-3 border-b border-slate-200 px-5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">
-          <Icon name="shield-check" className="h-4 w-4" />
-        </div>
+        {orgLogo ? (
+          <img
+            src={orgLogo}
+            alt={`${orgName} logo`}
+            className="h-8 w-8 shrink-0 rounded-md object-contain"
+          />
+        ) : (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">
+            <Icon name="shield-check" className="h-4 w-4" />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900">QMS Platform</p>
+          <p className="truncate text-sm font-semibold text-slate-900">{orgName}</p>
           <p className="truncate text-xs text-slate-500">ISO 9001 / 27001</p>
         </div>
       </div>

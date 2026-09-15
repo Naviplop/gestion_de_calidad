@@ -5,6 +5,11 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173';
 test.describe('Browser E2E — Post-Upgrade Regression', () => {
   test.describe('1. Browser Smoke Test', () => {
     test('should load login page without white screen', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       await page.goto(`${BASE_URL}/login`);
       await page.waitForLoadState('networkidle');
       await expect(page.locator('h1')).toContainText('QMS Platform');
@@ -46,6 +51,11 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
 
   test.describe('2. Login — Critical Path', () => {
     test('should login with valid credentials and reach dashboard', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       const responses: Record<string, { status: number; url: string }> = {};
       page.on('response', async (response) => {
         const url = response.url();
@@ -55,18 +65,19 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
       });
 
       await page.goto(`${BASE_URL}/login`);
+      await page.waitForSelector('input#email', { timeout: 30000 });
       await page.fill('input#email', 'admin@iso-management.local');
       await page.fill('input#password', 'Demo2024Secure!');
       await page.click('button[type="submit"]');
       await page.waitForURL('**/', { timeout: 15000 });
-
-      await page.waitForResponse((response) => response.url().includes('/dashboard/summary') && response.status() === 200, { timeout: 10000 });
+      await page.waitForResponse((response) => response.url().includes('/dashboard/summary'), { timeout: 10000 });
+      await page.waitForTimeout(500);
 
       const loginUrl = Object.keys(responses).find((url) => url.includes('/auth/login'));
       const dashboardUrl = Object.keys(responses).find((url) => url.includes('/dashboard/summary'));
 
       expect(loginUrl).toBeDefined();
-      expect(responses[loginUrl!].status).toBe(201);
+      expect(responses[loginUrl!].status).toBe(200);
 
       expect(dashboardUrl).toBeDefined();
       expect(responses[dashboardUrl!].status).toBe(200);
@@ -116,6 +127,11 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
 
   test.describe('3. Login — Invalid Credentials', () => {
     test('should reject wrong password', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       await page.goto(`${BASE_URL}/login`);
       await page.fill('input#email', 'admin@iso-management.local');
       await page.fill('input#password', 'WrongPassword123!');
@@ -126,6 +142,11 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
     });
 
     test('should reject nonexistent user', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       await page.goto(`${BASE_URL}/login`);
       await page.fill('input#email', 'nonexistent@test.com');
       await page.fill('input#password', 'WrongPassword123!');
@@ -138,6 +159,11 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
 
   test.describe('4. Email Case-Insensitive Login', () => {
     test('should login with uppercase email', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       await page.goto(`${BASE_URL}/login`);
       await page.fill('input#email', 'ADMIN@ISO-MANAGEMENT.LOCAL');
       await page.fill('input#password', 'Demo2024Secure!');
@@ -149,12 +175,18 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
 
   test.describe('5. Protected Routes', () => {
     test('should redirect to login when accessing protected route without auth', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       await page.goto(`${BASE_URL}/documents`);
       await page.waitForURL('**/login', { timeout: 10000 });
       await expect(page.locator('h1')).toContainText('QMS Platform');
     });
 
     test('should show checking session on hard refresh', async ({ page }) => {
+      await page.context().clearCookies();
       await page.goto(`${BASE_URL}/login`);
       await page.fill('input#email', 'admin@iso-management.local');
       await page.fill('input#password', 'Demo2024Secure!');
@@ -188,24 +220,33 @@ test.describe('Browser E2E — Post-Upgrade Regression', () => {
   test.describe('7. Navigation', () => {
     test('should navigate between protected pages', async ({ page }) => {
       await page.goto(`${BASE_URL}/login`);
+      await page.waitForSelector('input#email', { timeout: 30000 });
       await page.fill('input#email', 'admin@iso-management.local');
       await page.fill('input#password', 'Demo2024Secure!');
       await page.click('button[type="submit"]');
       await page.waitForURL('**/', { timeout: 15000 });
 
       await page.goto(`${BASE_URL}/documents`);
+      await page.waitForSelector('h1', { timeout: 20000 });
       await expect(page.getByRole('heading', { name: 'Documentos' })).toBeVisible({ timeout: 20000 });
 
       await page.goto(`${BASE_URL}/audits`);
+      await page.waitForSelector('h1', { timeout: 20000 });
       await expect(page.getByRole('heading', { name: 'Auditorías' })).toBeVisible({ timeout: 20000 });
 
       await page.goto(`${BASE_URL}/risks`);
+      await page.waitForSelector('h1', { timeout: 20000 });
       await expect(page.getByRole('heading', { name: 'Gestión de riesgos' })).toBeVisible({ timeout: 20000 });
     });
   });
 
   test.describe('8. API Correlation', () => {
     test('should not have unexpected 401/403/500 on main pages', async ({ page }) => {
+      await page.context().clearCookies();
+      await page.evaluate(() => {
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+      });
       const apiErrors: { url: string; status: number }[] = [];
       page.on('response', async (response) => {
         const url = response.url();

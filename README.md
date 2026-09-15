@@ -1,264 +1,204 @@
-# Sistema de Gestión de Calidad — QMS Platform
+# QMS Platform
 
-Plataforma empresarial de gestión de calidad ISO/QMS con arquitectura moderna, autenticación segura, multi-tenancy y diseño premium.
+Sistema de Gestión de Calidad y Gestión Documental para organizaciones que trabajan con sistemas basados en ISO.
 
 ## Estado actual
 
-**Última fase completada:** C.16 — Premium Enterprise Design Overhaul  
-**Veredicto:** GREEN — PREMIUM ENTERPRISE DESIGN VERIFIED  
-**Autor:** LAFM  
-**Fecha:** 2026-09-01
+**Versión:** 1.0.0
+**Estado:** RELEASE READY
+**Release Date:** 2026-09-15
+**Branch:** main
 
-## Fases completadas
+## 1. Descripción
 
-| Fase | Descripción | Veredicto |
-|------|-------------|-----------|
-| C.1 | Database Configuration | GREEN |
-| C.2 | Demo Data & Authorization Smoke Tests | GREEN |
-| C.3 | Demo Readiness | GREEN |
-| C.4 | Client Demo Hardening | GREEN |
-| C.5 | End-to-End Business Flow Validation | GREEN |
-| C.6 | API & Validation Hardening | GREEN |
-| C.7.1 | Executive Dashboard | GREEN |
-| C.7.2 | Demo Data & Seed | GREEN |
-| C.8 | Client Demo UX & Data Consistency Hardening | GREEN |
-| C.9 | Business UX & Lifecycle Polish | GREEN |
-| C.10.1 | Security & Technical Debt Remediation | GREEN |
-| C.10.1.5 | Global Architecture Audit | GO |
-| C.10.2 | System Integrity Audit | GO |
-| C.15 | Post-upgrade Auth Regression Fix | GREEN |
-| C.15.1 | Browser E2E Regression Closure | GREEN |
-| C.15.2 | Enterprise UX/UI, Navigation & Document Viewer Audit | GREEN |
-| C.16 | Premium Enterprise Product Design Overhaul | GREEN |
+QMS Platform es una plataforma empresarial de gestión de calidad ISO/QMS con:
 
-## Sistema implementado
+- Autenticación segura basada en JWT con rotación de refresh tokens
+- Autenticación multifactor (MFA/TOTP)
+- Gestión de organizaciones con aislamiento multi-tenant
+- Control de acceso basado en roles (RBAC)
+- Gestión documental completa con lifecycle
+- Gestión de no conformidades, riesgos y auditorías
+- Dashboard ejecutivo con KPIs
+- Notificaciones en tiempo real
+- Prevención de IDOR (Anti-IDOR guard)
+- Protección CSRF
+- Rate limiting
+- Trazabilidad completa (audit logs)
 
-### Backend — NestJS API
+## 2. Características V1.0
 
-**Módulos funcionales:**
-- `auth` — Autenticación, autorización, MFA, refresh tokens, CSRF
-- `users` — Gestión de usuarios con RBAC granular
-- `organizations` — Organizaciones y membresías multi-tenant
-- `departments` — Departamentos organizacionales
-- `processes` — Procesos de negocio
-- `standards` — Estándares y requisitos normativos
-- `documents` — Gestión documental completa con lifecycle (borrador, revisión, aprobación, publicación, obsolescencia)
-- `audits` — Programas de auditoría, checklists, findings
-- `nonconformities` — No conformidades, root cause, CAPA, verificación
-- `risks` — Gestión de riesgos, evaluaciones, controles, tratamientos
-- `dashboard` — Métricas ejecutivas y KPIs
-- `audit-logs` — Registro de auditoría inmutable
-- `security-events` — Eventos de seguridad con severidades
-- `file-assets` — Validación de archivos SHA-256, deduplicación
-- `health` — Smoke tests y health checks
+### Autenticación y Seguridad
 
-**Características de seguridad:**
-- JWT access token (15 min) + refresh token (7 días, rotación, revocación)
-- HttpOnly refresh cookies con `Secure; SameSite=Strict`
-- CSRF protection
-- Multi-tenancy con aislamiento application-level (guards + filtering)
-- RBAC granular: 94 permisos, 4 roles (ADMIN, MANAGER, AUDITOR, USER)
-- Account lockout: 5 intentos fallidos → 30 min
-- Password hashing: Argon2id
-- MFA con TOTP challenge
-- Security events logging (login, MFA, lifecycle)
-- Audit logs con hash SHA-256 encadenado
-- Optimistic locking con `If-Match` / `updatedAt`
-- Anti-IDOR guard cubriendo 20+ tipos de recurso
+- JWT access token (15 min TTL) + refresh token (7 días, rotación, revocación)
+- HttpOnly refresh cookies con Secure (producción) y SameSite=Strict (producción)
+- CSRF protection con tokens rotativos
+- MFA con TOTP (habilitar, deshabilitar, challenge)
+- Rate limiting (auth: 5 intentos/60s)
+- Password hashing con Argon2id
+- Account lockout (5 intentos fallidos → 30 min)
+- Refresh token reuse detection
+- Security event logging
 
-**Lifecycles implementados:**
-- **Documents:** DRAFT → IN_REVIEW → PENDING_APPROVAL → APPROVED → PUBLISHED → CURRENT → OBSOLETE (+ REJECTED, CANCELLED)
-- **Audits:** PLANNED → IN_PROGRESS → COMPLETED / CANCELLED
-- **Nonconformities:** OPEN → VERIFICATION → CLOSED
-- **Risks:** Identificación → Evaluación → Control → Tratamiento
+### Gestión de Organizaciones y Multi-Tenancy
 
-### Frontend — React + Vite + Tailwind
+- Organizaciones con membresías de usuarios
+- Aislamiento por organización (application-level)
+- Anti-IDOR guard (20+ tipos de recursos)
+- Cross-tenant access prevention (28 tests)
 
-**Páginas implementadas:**
-- Login + MFA challenge
-- Dashboard (KPIs, actividad reciente, alertas)
-- Documentos (lista, detalle, lifecycle, versiones, distribuciones, acuses)
-- Auditorías (programas, checklists, findings)
-- No conformidades (detalle, root cause, acciones correctivas)
-- Gestión de riesgos (evaluaciones, controles, tratamientos)
-- Registros de auditoría
-- Eventos de seguridad
-- Usuarios
-- Departamentos
-- Procesos
-- Estándares
-- Configuración de organización
-- Configuración de seguridad
-- Acceso denegado
+### RBAC
 
-**Design System Premium (C.16):**
-- Tokens centralizados en CSS variables
-- Paleta profesional slate + semantic colors
-- Componentes reutilizables: Button, Badge, Input, Select, Table, Modal, Tabs, Toast, LoadingState, EmptyState, Spinner, Breadcrumbs, PageHeader, Sidebar
-- Sidebar profesional con agrupación: Principal, Administración, Sistema
-- Mobile drawer con overlay backdrop-blur
-- Tipografía con jerarquía clara
-- Spacing consistente
-- Microinteracciones sutiles (hover, focus, active, transitions)
-- Responsive: desktop, laptop, tablet, mobile
+- 4 roles: ADMIN, MANAGER, AUDITOR, USER
+- 94 permisos granulares
+- @RequirePermission decorator
+- @RequireResourceOwnership decorator
 
-**Testing:**
-- 351 unit tests (Vitest)
-- 15 E2E tests (Playwright) — 15/15 PASS
-- Auth smoke tests
-- Browser regression suite
+### Departamentos
 
-## Arquitectura
+- CRUD completo
+- Jerarquía (padre/hijo)
+- Unicode/accent handling
 
-```
-sistema_de_gestion_de_calidad/
-├── backend/                 # NestJS API
-│   ├── src/
-│   │   ├── main.ts
-│   │   ├── app.module.ts
-│   │   └── modules/
-│   │       ├── auth/        # Auth, MFA, refresh, CSRF
-│   │       ├── users/       # Users, profiles, MFA settings
-│   │       ├── organizations/
-│   │       ├── departments/
-│   │       ├── processes/
-│   │       ├── standards/
-│   │       ├── documents/   # Lifecycle, versions, distributions
-│   │       ├── audits/      # Programs, checklists, findings
-│   │       ├── nonconformities/ # NC, root cause, CAPA
-│   │       ├── risks/       # Assessments, controls, treatments
-│   │       ├── dashboard/
-│   │       ├── audit-logs/
-│   │       ├── security-events/
-│   │       ├── file-assets/
-│   │       └── health/
-│   └── prisma/
-│       ├── schema.prisma
-│       └── migrations/
-├── frontend/                # React + Vite + Tailwind
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── AppRoutes.tsx
-│   │   ├── Layout.tsx
-│   │   ├── index.css        # Design tokens
-│   │   ├── contexts/
-│   │   │   └── AuthContext.tsx
-│   │   ├── lib/
-│   │   │   └── auth/
-│   │   │       ├── auth.service.ts
-│   │   │       ├── auth-security.ts
-│   │   │       └── security-events.ts
-│   │   ├── components/
-│   │   │   ├── ui/          # Design system
-│   │   │   └── Toast.tsx
-│   │   ├── pages/
-│   │   └── e2e/             # Playwright tests
-│   └── package.json
-├── docs/
-├── API_SPEC.md
-├── CONTRACT-BASELINE-REPORT.md
-├── FASE-C15-POST-UPGRADE-REGRESSION-AUDIT-REPORT.md
-├── FASE-C15-BROWSER-E2E-REGRESSION-AUDIT-REPORT.md
-├── FASE-C15.2-ENTERPRISE-UX-UI-AUDIT-REPORT.md
-├── FASE-C16-PREMIUM-ENTERPRISE-DESIGN-REPORT.md
-└── README.md
-```
+### Procesos
 
-## Stack tecnológico
+- CRUD con auto-código secuencial
+- Concurrency-safe (optimistic locking)
+- Duplicate prevention
+
+### Estándares y Requisitos
+
+- Estándares con versiones
+- Requisitos vinculados a estándares
+
+### Documentos
+
+- Lifecycle completo (DRAFT, IN_REVIEW, PENDING_APPROVAL, APPROVED, PUBLISHED, CURRENT, OBSOLETE, REJECTED, CANCELLED)
+- Versionado
+- Revisión y aprobación
+- Distribución
+- Acuse/acknowledgement
+- File Assets (SHA-256, deduplicación)
+- Preview (PDF, imagen, texto)
+- Download
+
+### Auditorías
+
+- Programas de auditoría
+- Checklists
+- Findings
+
+### No Conformidades
+
+- CRUD con detectedAt, description, severity, responsible
+- Root cause analysis
+- Corrective actions
+- CAPA tracking
+
+### Riesgos
+
+- Evaluaciones de riesgo
+- Controles y tratamientos
+- Risk assessment flow
+
+### Dashboard
+
+- KPIs ejecutivos
+- Actividad reciente
+- Alertas
+
+### Notificaciones
+
+- Lista, lectura, marcar como leído
+- NotificationBell (unread count)
+- Persistencia
+
+### Usuarios
+
+- CRUD con permisos y roles por usuario
+- Deactivation
+- Self-deactivation prevention
+
+## 3. Arquitectura
 
 ### Backend
-- **Framework:** NestJS
-- **ORM:** Prisma
-- **Base de datos:** PostgreSQL 16+ / SQLite
-- **Autenticación:** JWT + HttpOnly refresh cookies + Argon2id
-- **Seguridad:** CSRF, RBAC, Anti-IDOR, Tenant isolation, Audit logs, Security events
-- **Testing:** Jest
-- **Linting:** ESLint
+
+- **Framework:** NestJS 11
+- **ORM:** Prisma 5 (@prisma/client)
+- **Base de datos:** PostgreSQL 15+
+- **Autenticación:** JWT + Refresh Token (cookie)
+- **Hashing:** Argon2 (node-argon2)
+- **MFA:** Speakeasy (TOTP)
+- **Rate Limiting:** @nestjs/throttler
+- **CORS:** Configurado para localhost:5173
+- **Helmet:** Security headers
+- **Logging:** NestJS Logger + AppLoggerService
 
 ### Frontend
-- **Framework:** React 18 + TypeScript
-- **Routing:** React Router v7
-- **Styling:** Tailwind CSS v3 + CSS variables (design tokens)
-- **State:** Context API + React Query
-- **Testing:** Vitest + Playwright
-- **Linting:** ESLint
 
-## Características implementadas
+- **Framework:** React 18
+- **Build:** Vite 5
+- **Styling:** Tailwind CSS 3
+- **Routing:** React Router 7
+- **State:** TanStack Query (React Query)
+- **Auth:** Cookie-based (httpOnly refresh + Bearer access)
+- **CSRF:** Token-based (cookie + header)
 
-### Autenticación y seguridad
-- [x] Login con email/contraseña
-- [x] MFA challenge (TOTP)
-- [x] Refresh token automático
-- [x] Access token memory-only (no localStorage)
-- [x] HttpOnly refresh cookies
-- [x] CSRF protection
-- [x] Multi-tenancy application-level
-- [x] RBAC granular (94 permisos, 4 roles)
-- [x] Account lockout (5 intentos → 30 min)
-- [x] Password hashing Argon2id
-- [x] Security events logging
-- [x] Audit logs con hash encadenado
-- [x] Optimistic locking (If-Match / updatedAt)
-- [x] Anti-IDOR guard (20+ recursos)
+### Testing
 
-### Módulos de negocio
-- [x] Dashboard ejecutivo con KPIs, actividad reciente, alertas
-- [x] Documentos con lifecycle completo (9 estados)
-- [x] Versiones de documento inmutables post-publicación
-- [x] Distribuciones y acuses
-- [x] Auditorías con programas, checklists, findings
-- [x] No conformidades con root cause y CAPA
-- [x] Gestión de riesgos con evaluaciones, controles, tratamientos
-- [x] Registros de auditoría inmutables
-- [x] Eventos de seguridad con severidades
-- [x] Gestión de usuarios, departamentos, procesos, estándares
-- [x] Configuración de organización y seguridad
+- **Backend:** Jest + ts-jest (294 tests)
+- **Frontend:** Vitest + Testing Library (351 tests)
+- **E2E:** Playwright (15 tests, 3 consecutive runs stable)
 
-### UX/UI Enterprise
-- [x] Sidebar profesional con navegación agrupada
-- [x] Mobile drawer responsivo
-- [x] Design system consolidado (14 componentes UI)
-- [x] Tipografía con jerarquía clara
-- [x] Paleta profesional sobria (slate + semantic colors)
-- [x] Tablas enterprise con hover sutil
-- [x] Modales con transiciones sutiles
-- [x] Estados de carga, error y vacío normalizados
-- [x] Toasts consistentes
-- [x] Breadcrumbs y page headers
-- [x] Microinteracciones (hover, focus, active, transitions)
-- [x] Responsive: desktop, laptop, tablet, mobile
-- [x] 100% textos en español con terminología ISO/QMS
+## 4. Estructura del Proyecto
 
-## Reportes de auditoría
+```
+backend/
+  src/
+    modules/          # Feature modules (auth, users, documents, etc.)
+    common/           # Shared code (guards, interceptors, middleware)
+    database/         # Prisma service, database module
+    config/           # Environment config
+  prisma/
+    migrations/       # Database migrations
+    seed.ts           # Seed script
+  dist/               # Compiled output
 
-| Reporte | Fase | Estado |
-|---------|------|--------|
-| `FASE-C15-POST-UPGRADE-REGRESSION-AUDIT-REPORT.md` | C.15 | GREEN |
-| `FASE-C15-BROWSER-E2E-REGRESSION-AUDIT-REPORT.md` | C.15.1 | GREEN |
-| `FASE-C15.2-ENTERPRISE-UX-UI-AUDIT-REPORT.md` | C.15.2 | GREEN |
-| `FASE-C16-PREMIUM-ENTERPRISE-DESIGN-REPORT.md` | C.16 | GREEN |
-| `CONTRACT-BASELINE-REPORT.md` | C.10.1 | YELLOW |
-| `FASE-C.10.1.5-GLOBAL-ARCHITECTURE-AUDIT-REPORT.md` | C.10.1.5 | GO |
-| `FASE-C.10.2-SYSTEM-INTEGRITY-AUDIT-REPORT.md` | C.10.2 | GO |
-| `10-POINT-FINAL-VERDICT.md` | C.10.1 | GREEN |
+frontend/
+  src/
+    components/       # UI components
+    pages/            # Route pages
+    contexts/         # React contexts (Auth)
+    lib/              # Utilities (auth API client)
+    e2e/              # Playwright E2E tests
+  public/             # Static assets
 
-## Ejecutar el proyecto
+docs/
+  releases/           # Release documentation
 
-### Prerrequisitos
-- Node.js 18+
-- npm
-- PostgreSQL 16+ (o SQLite para desarrollo)
-- Base de datos configurada en `backend/prisma/.env`
+FASE-12.*           # Phase audit reports
+CHANGELOG.md        # Version history
+README.md           # This file
+```
+
+## 5. Instalación
+
+### Prerequisitos
+
+- Node.js 20+
+- npm 9+
+- PostgreSQL 15+
 
 ### Backend
 
 ```bash
 cd backend
 npm install
-npm run start:dev
+cp .env.example .env
+npx prisma migrate deploy
+npm run seed
+npm run dev
 ```
-
-API disponible en: `http://localhost:3001/api/v1`
 
 ### Frontend
 
@@ -268,135 +208,77 @@ npm install
 npm run dev
 ```
 
-Frontend disponible en: `http://localhost:5173`
+### Variables de Entorno
 
-### Variables de entorno
+Ver `.env.example` para las variables requeridas.
 
-**Backend** (`backend/prisma/.env`):
-```env
-DATABASE_URL="postgresql://user:pass@host:5432/qms?schema=public"
-JWT_SECRET="your-secret-key"
-REFRESH_TOKEN_SECRET="your-refresh-secret"
-```
+## 6. Comandos Disponibles
 
-**Frontend** (`frontend/.env`):
-```env
-VITE_API_BASE_URL=http://localhost:3001/api/v1
-```
+### Backend
 
-## Tests
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo (NestJS watch) |
+| `npm run build` | Compilar |
+| `npm run start` | Producción |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check |
+| `npm test` | Jest tests |
+| `npm run seed` | Seed database |
+| `npm run migration` | Deploy migrations |
+| `npx prisma validate` | Validar schema |
+| `npx prisma migrate status` | Estado migraciones |
 
-### Frontend — Unit tests
-```bash
-cd frontend
-npm test
-```
+### Frontend
 
-### Frontend — E2E browser tests
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo (Vite) |
+| `npm run build` | Compilar |
+| `npm run preview` | Preview build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check |
+| `npm test` | Vitest tests |
+
+### E2E
+
 ```bash
 cd frontend
 npx playwright test
 ```
 
-### Backend — Unit tests
-```bash
-cd backend
-npm test
-```
+## 7. Seguridad
 
-### Prisma
-```bash
-cd backend
-npx prisma validate
-npx prisma generate
-npx prisma migrate status
-```
+V1.0 incluye:
 
-## Build
+- JWT con issuer ("QMS Platform") y audience ("QMS API")
+- Access token de corta duración (15 min)
+- Refresh token HttpOnly, Secure (producción), SameSite=Strict (producción)
+- Refresh token rotation en cada uso
+- Reuse detection para refresh tokens
+- CSRF protection con tokens rotativos
+- Rate limiting en endpoints de autenticación
+- MFA/TOTP habilitado
+- Password hashing con Argon2id
+- Anti-IDOR guard en 20+ tipos de recursos
+- RBAC granular (94 permisos)
+- Tenant isolation (28 tests cross-tenant)
+- Helmet (CSP, HSTS, etc.)
+- CORS configurado
 
-### Backend
-```bash
-cd backend
-npm run build
-```
+## 8. White-label / Branding
 
-### Frontend
-```bash
-cd frontend
-npm run build
-```
+La arquitectura contempla personalización visual por organización. La personalización específica del branding será realizada en una fase posterior (FASE 13).
 
-## E2E Suite
+## 9. Documentación Adicional
 
-Suite completa de 15 tests verificando:
-- Browser smoke (login page, CSS/JS, console errors)
-- Login / MFA / Logout
-- Protected routes
-- Hard refresh con sesión
-- Auth headers en requests
-- HttpOnly cookies
-- Navegación entre módulos
-- API correlation
+| Documento | Descripción |
+|-----------|-------------|
+| `CHANGELOG.md` | Historial de versiones |
+| `docs/releases/RELEASE-V1.0.0.md` | Documentación de release V1.0 |
+| `backend/.env.example` | Variables de entorno de ejemplo |
+| `FASE-12.11-FINAL-V1.0-RELEASE-GATE.md` | Resultado del release gate |
 
-**Resultado:** 15/15 PASS
+---
 
-## Quality Gates
-
-| Componente | Lint | Typecheck | Build | Tests |
-|------------|------|-----------|-------|-------|
-| Backend | 3 errores menores | PASS | PASS | 255 passed |
-| Frontend | PASS | PASS | PASS | 351 passed |
-| E2E | — | — | — | 15/15 PASS |
-| Prisma | — | — | PASS | Schema valid |
-
-## Pendiente de implementar
-
-### Security & Infrastructure
-- [ ] PostgreSQL RLS (Row Level Security) — documentado como defensa en profundidad, actualmente tenant isolation es application-level
-- [ ] Redis para cache y queues
-- [ ] S3/MinIO storage para archivos (actualmente validación SHA-256 local)
-- [ ] Optimistic locking en base de datos (`@@version` o columna `version`)
-- [ ] Hash chain completa en `audit_logs` (`previousHash`, `eventHash`)
-- [ ] Security events table formal en schema Prisma
-- [ ] Endpoints MFA management: enroll, disable, recovery-codes
-- [ ] `/auth/me` endpoint
-- [ ] `/auth/change-password` endpoint
-- [ ] `/auth/forgot-password` / `/auth/reset-password` flow
-- [ ] `/auth/sessions` endpoint para gestión de sesiones
-- [ ] Health checks avanzados (`/health/live`, `/health/ready`)
-
-### Business Features
-- [ ] Training module (capacitaciones)
-- [ ] Indicators / KPIs avanzados
-- [ ] Reportes ejecutivos exportables (PDF, Excel)
-- [ ] Notificaciones push/email
-- [ ] Workflow de aprobaciones multi-nivel
-- [ ] Gestión de competencias
-- [ ] Planes de capacitación
-- [ ] Evaluación de desempeño
-- [ ] Gestión de proveedores
-- [ ] Inspecciones y checklists avanzadas
-
-### Frontend Enhancements
-- [ ] Dark mode
-- [ ] Internacionalización (i18n) completa
-- [ ] PWA / offline support
-- [ ] Accesibilidad WCAG 2.1 AA completa
-- [ ] Skeleton screens para todas las páginas
-- [ ] Infinite scroll en tablas grandes
-- [ ] Filtros avanzados con persistencia
-- [ ] Drag & drop para upload de archivos
-- [ ] Preview inline de PDFs
-- [ ] Gráficos avanzados en dashboard
-
-### DevOps
-- [ ] CI/CD pipeline
-- [ ] Docker / Docker Compose
-- [ ] Kubernetes manifests
-- [ ] Monitoring (Prometheus + Grafana)
-- [ ] Logging estructurado (ELK)
-- [ ] Backup automatizado de base de datos
-
-## Autor
-
-**LAFM** — Desarrollo completo, arquitectura, diseño enterprise, testing y auditorías.
+*QMS Platform V1.0.0 — RELEASE READY*

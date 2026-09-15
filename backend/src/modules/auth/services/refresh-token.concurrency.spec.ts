@@ -41,7 +41,7 @@ describe('RefreshTokenService - Concurrency', () => {
     it('should rotate token on first use', async () => {
       const existingToken = {
         id: 'token-1',
-        tokenHash: 'hash-1',
+        tokenHash: 'a'.repeat(64),
         userId: 'user-1',
         organizationId: 'org-1',
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -54,7 +54,7 @@ describe('RefreshTokenService - Concurrency', () => {
         id: 'token-2',
         userId: 'user-1',
         organizationId: 'org-1',
-        tokenHash: 'hash-2',
+        tokenHash: 'b'.repeat(64),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -81,6 +81,7 @@ describe('RefreshTokenService - Concurrency', () => {
       expect(result?.tokenHash).toHaveLength(64);
       expect(result?.userId).toBe('user-1');
       expect(result?.organizationId).toBe('org-1');
+      expect(result?.rawToken).not.toBe('raw-token-1');
     });
 
     it('should detect reuse when token is already revoked', async () => {

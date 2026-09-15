@@ -192,4 +192,41 @@ export class DepartmentRepository {
       throw new NotFoundException('DepartmentNotFound');
     }
   }
+
+  async detectCycle(departmentId: string, newParentId: string, organizationId: string): Promise<boolean> {
+    if (!newParentId) {
+      return false;
+    }
+    if (departmentId && newParentId === departmentId) {
+      return true;
+    }
+    let currentId: string | null = newParentId;
+    const visited = new Set<string>();
+    if (departmentId) {
+      visited.add(departmentId);
+    }
+
+    while (currentId) {
+      if (currentId === departmentId) {
+        return true;
+      }
+      if (visited.has(currentId)) {
+        return true;
+      }
+      visited.add(currentId);
+
+      const dept: { parentDepartmentId: string | null } | null = await this.prisma.department.findFirst({
+        where: { id: currentId, organizationId },
+        select: { parentDepartmentId: true },
+      });
+
+      if (!dept) {
+        return false;
+      }
+
+      currentId = dept.parentDepartmentId;
+    }
+
+    return false;
+  }
 }

@@ -31,6 +31,10 @@ export class DepartmentsService {
       if (!parent) {
         throw new BadRequestException('InvalidParentDepartment');
       }
+      const cycleDetected = await this.departmentRepository.detectCycle('', dto.parentDepartmentId, organizationId);
+      if (cycleDetected) {
+        throw new BadRequestException('CycleDetectedInDepartmentHierarchy');
+      }
     }
 
     return this.departmentRepository.create(organizationId, {
@@ -60,6 +64,10 @@ export class DepartmentsService {
       const parent = await this.departmentRepository.findById(dto.parentDepartmentId, organizationId);
       if (!parent) {
         throw new BadRequestException('InvalidParentDepartment');
+      }
+      const cycleDetected = await this.departmentRepository.detectCycle(id, dto.parentDepartmentId, organizationId);
+      if (cycleDetected) {
+        throw new BadRequestException('CycleDetectedInDepartmentHierarchy');
       }
     }
 

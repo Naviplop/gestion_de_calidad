@@ -63,6 +63,31 @@ export class LocalFileStorageAdapter implements FileStorageAdapter {
       throw new NotFoundException('FileNotFound');
     }
 
+    return this.readFileStream(absolutePath);
+  }
+
+  async readByObjectKey(objectKey: string): Promise<AsyncIterable<Buffer>> {
+    const sanitized = objectKey.replace(/\\/g, '/').replace(/^\/+/, '');
+    const segments = sanitized.split('/').filter((s) => s.length > 0 && s !== '..');
+    if (segments.length === 0) {
+      throw new NotFoundException('FileNotFound');
+    }
+    const absolutePath = path.resolve(this.storageRoot, ...segments);
+    const relativeFromRoot = path.relative(this.storageRoot, absolutePath);
+    if (relativeFromRoot.startsWith('..') || path.isAbsolute(relativeFromRoot)) {
+      throw new NotFoundException('FileNotFound');
+    }
+
+    try {
+      await fs.access(absolutePath);
+    } catch {
+      throw new NotFoundException('FileNotFound');
+    }
+
+    return this.readFileStream(absolutePath);
+  }
+
+  private async readFileStream(absolutePath: string): Promise<AsyncIterable<Buffer>> {
     const CHUNK_SIZE = 64 * 1024;
     let offset = 0;
     const totalSize = (await fs.stat(absolutePath)).size;
@@ -81,6 +106,23 @@ export class LocalFileStorageAdapter implements FileStorageAdapter {
         await fileHandle.close();
       },
     };
+  }
+
+  async existsByObjectKey(objectKey: string): Promise<boolean> {
+    const sanitized = objectKey.replace(/\\/g, '/').replace(/^\/+/, '');
+    const segments = sanitized.split('/').filter((s) => s.length > 0 && s !== '..');
+    if (segments.length === 0) return false;
+    const absolutePath = path.resolve(this.storageRoot, ...segments);
+    const relativeFromRoot = path.relative(this.storageRoot, absolutePath);
+    if (relativeFromRoot.startsWith('..') || path.isAbsolute(relativeFromRoot)) {
+      return false;
+    }
+    try {
+      await fs.access(absolutePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async delete(pathData: StoragePath): Promise<void> {

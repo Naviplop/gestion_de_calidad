@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext, ForbiddenException, SetMetadata, Logger } from '@nestjs/common';
+import { Injectable, ExecutionContext, ForbiddenException, BadRequestException, SetMetadata, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../database/prisma.service';
 import { SecurityEventService } from '../../modules/security-events/services/security-event.service';
@@ -43,6 +43,11 @@ export class AntiIdorGuard {
     const resourceId = Array.isArray(rawResourceId) ? rawResourceId[0] : rawResourceId;
     if (!resourceId) {
       throw new ForbiddenException('Forbidden');
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(resourceId)) {
+      throw new BadRequestException('Invalid resource ID format');
     }
 
     let resourceOrganizationId: string | null = null;

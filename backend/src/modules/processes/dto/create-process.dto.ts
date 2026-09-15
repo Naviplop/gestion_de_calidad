@@ -1,10 +1,11 @@
 import { IsString, MaxLength, IsOptional, Matches, IsUUID } from 'class-validator';
 
 export class CreateProcessDto {
+  @IsOptional()
   @IsString()
   @MaxLength(50)
   @Matches(/^[a-zA-Z0-9\-]+$/)
-  code!: string;
+  code?: string;
 
   @IsString()
   @MaxLength(255)

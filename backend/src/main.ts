@@ -38,7 +38,7 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, { logger: false });
     const logger = new AppLoggerService();
-    (app as any).useLogger(logger);
+    app.useLogger(logger);
     app.use(helmet({
       contentSecurityPolicy: {
         directives: {

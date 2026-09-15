@@ -3,6 +3,7 @@ import { authApiClient } from '../lib/auth/auth.service';
 import type { UserListItem, UserDetail } from '../lib/auth/auth.service';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { LoadingState } from '../components/ui/LoadingState';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -20,6 +21,7 @@ export function UsersPage() {
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
+  const [departments, setDepartments] = useState<Array<{ id: string; label: string }>>([]);
 
   const openEditUser = async (user: UserListItem) => {
     try {
@@ -51,6 +53,18 @@ export function UsersPage() {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const response = await authApiClient.listDepartments({ page: 1, pageSize: 100 });
+        setDepartments(response.data.map((d) => ({ id: d.id, label: d.name })));
+      } catch {
+        // ignore
+      }
+    };
+    loadDepartments();
+  }, []);
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
@@ -147,21 +161,22 @@ export function UsersPage() {
       </div>
 
       {showCreateModal && (
-        <CreateUserModal onClose={() => setShowCreateModal(false)} onCreated={loadUsers} />
+        <CreateUserModal onClose={() => setShowCreateModal(false)} onCreated={loadUsers} departments={departments} />
       )}
 
       {selectedUser && (
-        <EditUserModal user={selectedUser} onClose={() => setSelectedUser(null)} onUpdated={loadUsers} />
+        <EditUserModal user={selectedUser} onClose={() => setSelectedUser(null)} onUpdated={loadUsers} departments={departments} />
       )}
     </>
   );
 }
 
-function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateUserModal({ onClose, onCreated, departments }: { onClose: () => void; onCreated: () => void; departments: Array<{ id: string; label: string }> }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -176,6 +191,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
         password,
         firstName,
         lastName,
+        departmentId: departmentId || undefined,
         roleIds: [],
         mfaEnabled,
       });
@@ -203,12 +219,21 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
     >
       {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       <form id="create-user-form" onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required helperText="Ej. usuario@empresa.com" />
         <Input label="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} helperText="Mínimo 12 caracteres" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required helperText="Ej. Juan Carlos" />
+          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required helperText="Ej. Pérez Gómez" />
         </div>
+        <Select
+          label="Departamento"
+          name="departmentId"
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value)}
+          placeholder="Selecciona un departamento"
+          options={departments.map((d) => ({ value: d.id, label: d.label }))}
+          helperText={departments.length === 0 ? 'No hay departamentos configurados' : 'Opcional'}
+        />
         <label className="flex cursor-pointer items-center gap-2.5">
           <input
             type="checkbox"
@@ -223,9 +248,10 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   );
 }
 
-function EditUserModal({ user, onClose, onUpdated }: { user: UserDetail; onClose: () => void; onUpdated: () => void }) {
+function EditUserModal({ user, onClose, onUpdated, departments }: { user: UserDetail; onClose: () => void; onUpdated: () => void; departments: Array<{ id: string; label: string }> }) {
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
+  const [departmentId, setDepartmentId] = useState(user.departmentId || '');
   const [isActive, setIsActive] = useState(user.isActive);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -235,7 +261,7 @@ function EditUserModal({ user, onClose, onUpdated }: { user: UserDetail; onClose
     setLoading(true);
     setError(null);
     try {
-      await authApiClient.updateUser(user.id, { firstName, lastName, isActive });
+      await authApiClient.updateUser(user.id, { firstName, lastName, departmentId: departmentId || null, isActive });
       onUpdated();
       onClose();
     } catch (err) {
@@ -261,9 +287,18 @@ function EditUserModal({ user, onClose, onUpdated }: { user: UserDetail; onClose
       {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       <form id="edit-user-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+          <Input label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required helperText="Ej. Juan Carlos" />
+          <Input label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required helperText="Ej. Pérez Gómez" />
         </div>
+        <Select
+          label="Departamento"
+          name="departmentId"
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value)}
+          placeholder="Sin departamento"
+          options={departments.map((d) => ({ value: d.id, label: d.label }))}
+          helperText={departments.length === 0 ? 'No hay departamentos configurados' : 'Opcional'}
+        />
         <label className="flex cursor-pointer items-center gap-2.5">
           <input
             type="checkbox"

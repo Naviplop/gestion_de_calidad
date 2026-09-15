@@ -53,14 +53,13 @@ export function ProcessesPage() {
     e.preventDefault();
     setFormError(null);
     const formData = new FormData(e.currentTarget);
-    const code = formData.get('code') as string;
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
     const processType = formData.get('processType') as string;
 
     try {
       await authApiClient.createProcess({
-        code,
+        code: '',
         name,
         description: description || undefined,
         processType: processType || undefined,
@@ -182,10 +181,7 @@ export function ProcessesPage() {
         >
           {formError && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
           <form id="create-process-form" onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="Código" name="code" required maxLength={50} />
-              <Input label="Tipo de proceso" name="processType" maxLength={50} />
-            </div>
+            <Input label="Tipo de proceso" name="processType" maxLength={50} />
             <Input label="Nombre" name="name" required maxLength={255} />
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>

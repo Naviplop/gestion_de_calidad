@@ -4,10 +4,7 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   mfaEnabled: boolean;
-  tenant: {
-    organizationId: string;
-    name: string;
-  };
+  tenant: AuthTenant;
   roles: Array<{
     id: string;
     name: string;
@@ -17,6 +14,7 @@ export interface AuthUser {
 export interface AuthTenant {
   organizationId: string;
   name: string;
+  logoUrl?: string | null;
 }
 
 export interface AuthRole {

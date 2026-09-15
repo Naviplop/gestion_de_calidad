@@ -14,6 +14,7 @@ interface IconProps {
     | 'logout'
     | 'search'
     | 'bell'
+    | 'spinner'
     | 'plus'
     | 'chevron-down'
     | 'chevron-right'
@@ -23,6 +24,8 @@ interface IconProps {
     | 'eye'
     | 'edit'
     | 'more'
+    | 'user'
+    | 'workflow'
     | 'file'
     | 'send'
     | 'close'
@@ -65,6 +68,9 @@ export function Icon({ name, className = 'h-4 w-4' }: IconProps) {
     'arrow-right': <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />,
     'arrow-left': <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />,
     exclamation: <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />,
+    user: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />,
+    workflow: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />,
+    spinner: <path className="animate-spin" strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />,
   };
 
   return (

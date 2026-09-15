@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req, ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
@@ -80,7 +80,7 @@ export class RisksController {
   @Get(':riskId/assessments')
   @RequirePermission('risks:read')
   listAssessments(
-    @Param('riskId') riskId: string,
+    @Param('riskId', ParseUUIDPipe) riskId: string,
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -95,7 +95,7 @@ export class RisksController {
 
   @Post(':riskId/assessments')
   @RequirePermission('risks:assess')
-  createAssessment(@Param('riskId') riskId: string, @Body() dto: CreateRiskAssessmentDto, @Req() req: AuthenticatedRequest) {
+  createAssessment(@Param('riskId', ParseUUIDPipe) riskId: string, @Body() dto: CreateRiskAssessmentDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.risksService.createRiskAssessment(req.organizationId, riskId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
@@ -103,7 +103,7 @@ export class RisksController {
   @Get(':riskId/controls')
   @RequirePermission('risks:read')
   listControls(
-    @Param('riskId') riskId: string,
+    @Param('riskId', ParseUUIDPipe) riskId: string,
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -118,7 +118,7 @@ export class RisksController {
 
   @Post(':riskId/controls')
   @RequirePermission('risks:create')
-  createControl(@Param('riskId') riskId: string, @Body() dto: CreateRiskControlDto, @Req() req: AuthenticatedRequest) {
+  createControl(@Param('riskId', ParseUUIDPipe) riskId: string, @Body() dto: CreateRiskControlDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.risksService.createRiskControl(req.organizationId, riskId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
@@ -126,7 +126,7 @@ export class RisksController {
   @Get(':riskId/treatments')
   @RequirePermission('risks:read')
   listTreatments(
-    @Param('riskId') riskId: string,
+    @Param('riskId', ParseUUIDPipe) riskId: string,
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -141,7 +141,7 @@ export class RisksController {
 
   @Post(':riskId/treatments')
   @RequirePermission('risks:createTreatments')
-  createTreatment(@Param('riskId') riskId: string, @Body() dto: CreateRiskTreatmentDto, @Req() req: AuthenticatedRequest) {
+  createTreatment(@Param('riskId', ParseUUIDPipe) riskId: string, @Body() dto: CreateRiskTreatmentDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.risksService.createRiskTreatment(req.organizationId, riskId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }

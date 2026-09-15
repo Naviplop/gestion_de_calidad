@@ -21,6 +21,9 @@ export class IdempotencyMiddleware implements NestMiddleware {
     const stored = await this.idempotencyService.getStoredResponse(organizationId, key);
     if (stored) {
       res.status(stored.statusCode);
+      if (stored.statusCode === 204 || stored.statusCode === 205 || !stored.body) {
+        return res.end();
+      }
       return res.json(stored.body);
     }
 

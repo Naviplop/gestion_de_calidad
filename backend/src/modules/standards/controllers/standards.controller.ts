@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { StandardsService } from '../services/standards.service';
@@ -29,14 +29,14 @@ export class StandardsController {
 
   @Get(':id')
   @RequirePermission('standards:read')
-  get(@Param('id') id: string) {
+  get(@Param('id', ParseUUIDPipe) id: string) {
     return this.standardsService.getStandard(id);
   }
 
   @Get(':id/requirements')
   @RequirePermission('standards:read')
   getRequirements(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('parentId') parentId?: string,

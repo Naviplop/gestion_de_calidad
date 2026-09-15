@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
-import type { Risk, RiskListItem, RiskAssessment, RiskControl, RiskTreatment } from '../lib/auth/auth.service';
+import type { Risk, RiskListItem, RiskAssessment, RiskControl, RiskTreatment, UserListItem } from '../lib/auth/auth.service';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -88,6 +88,7 @@ export function RiskManagementPage() {
   const [showTreatmentModal, setShowTreatmentModal] = useState(false);
   const [showEditTreatmentModal, setShowEditTreatmentModal] = useState(false);
   const [editingTreatment, setEditingTreatment] = useState<RiskTreatment | null>(null);
+  const [users, setUsers] = useState<Array<{ id: string; label: string }>>([]);
 
   const loadRisks = useCallback(async () => {
     setLoading(true);
@@ -112,6 +113,18 @@ export function RiskManagementPage() {
   useEffect(() => {
     loadRisks();
   }, [loadRisks]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await authApiClient.listUsers({ page: 1, pageSize: 100, isActive: true });
+        setUsers(res.data.map((u: UserListItem) => ({ id: u.id, label: `${u.firstName} ${u.lastName}` })));
+      } catch {
+        // ignore
+      }
+    };
+    loadUsers();
+  }, []);
 
   const loadDetail = useCallback(async (risk: Risk) => {
     setSelectedRisk(risk);
@@ -512,8 +525,15 @@ export function RiskManagementPage() {
               <textarea name="description" required rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="ID de proceso" name="processId" />
-              <Input label="ID de propietario" name="ownerId" />
+              <Input label="ID de proceso" name="processId" helperText="Opcional. Código del proceso al que pertenece" />
+              <Select
+                label="Propietario"
+                name="ownerId"
+                defaultValue=""
+                placeholder="Selecciona una persona"
+                options={[{ value: '', label: 'Selecciona una persona' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona responsable del riesgo"
+              />
             </div>
           </form>
         </Modal>
@@ -591,7 +611,14 @@ export function RiskManagementPage() {
               <textarea name="description" required rows={3} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="ID responsable" name="responsibleId" />
+              <Select
+                label="Responsable"
+                name="responsibleId"
+                defaultValue=""
+                placeholder="Selecciona una persona"
+                options={[{ value: '', label: 'Selecciona una persona' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona que ejecutará el tratamiento"
+              />
               <Input label="Fecha de vencimiento" name="dueDate" type="date" />
             </div>
           </form>
@@ -619,7 +646,13 @@ export function RiskManagementPage() {
               <textarea name="description" required rows={3} defaultValue={editingTreatment.description} className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400" />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="ID responsable" name="responsibleId" defaultValue={editingTreatment.responsibleId || ''} />
+              <Select
+                label="Responsable"
+                name="responsibleId"
+                defaultValue={editingTreatment.responsibleId || ''}
+                options={[{ value: '', label: 'Selecciona una persona' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona que ejecutará el tratamiento"
+              />
               <Input label="Fecha de vencimiento" name="dueDate" type="date" defaultValue={editingTreatment.dueDate ? editingTreatment.dueDate.split('T')[0] : ''} />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

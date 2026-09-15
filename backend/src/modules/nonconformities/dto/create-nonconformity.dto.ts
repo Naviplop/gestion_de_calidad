@@ -1,4 +1,5 @@
 import { IsString, MaxLength, IsOptional, IsDate, IsUUID, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateNonconformityDto {
   @IsOptional()
@@ -28,6 +29,7 @@ export class CreateNonconformityDto {
   @IsIn(['MAJOR', 'MINOR', 'CRITICAL'])
   severity!: string;
 
+  @Type(() => Date)
   @IsDate()
   detectedAt!: Date;
 

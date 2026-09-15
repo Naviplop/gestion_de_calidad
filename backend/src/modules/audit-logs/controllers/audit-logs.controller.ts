@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, Req, ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { AuditLogService } from '../services/audit-log.service';
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
@@ -38,7 +38,7 @@ export class AuditLogsController {
 
   @Get('correlation/:correlationId')
   @RequirePermission('audit-logs:read')
-  findByCorrelationId(@Req() req: AuthenticatedRequest, @Param('correlationId') correlationId: string) {
+  findByCorrelationId(@Req() req: AuthenticatedRequest, @Param('correlationId', ParseUUIDPipe) correlationId: string) {
     return this.auditLogService.findByCorrelationId(req.organizationId, correlationId);
   }
 }

@@ -3,7 +3,7 @@ import { IsString, MaxLength, IsOptional, Matches, IsUUID } from 'class-validato
 export class CreateDepartmentDto {
   @IsString()
   @MaxLength(150)
-  @Matches(/^[a-zA-Z0-9\s\-_.]+$/)
+  @Matches(/^[\p{L}\p{N}\s\-_.]+$/u)
   name!: string;
 
   @IsOptional()

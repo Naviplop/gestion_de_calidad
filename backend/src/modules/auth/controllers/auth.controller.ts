@@ -4,7 +4,6 @@ import { AuthService } from '../services/auth.service';
 import { MfaService } from '../services/mfa.service';
 import { Public } from '../decorators/auth.decorators';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthGuard } from '../guards/auth.guard';
 import { CookieInterceptor } from '../interceptors/cookie.interceptor';
 
 interface AuthRequest extends Request {
@@ -22,6 +21,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   @UseInterceptors(CookieInterceptor)
   async login(@Body() body: { email: string; password: string }, @Req() req: AuthRequest) {

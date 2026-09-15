@@ -17,13 +17,14 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { FileAssetsModule } from './modules/file-assets/file-assets.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { TenantContextGuard } from './common/guards/tenant-context.guard';
 import { AntiIdorGuard } from './common/guards/anti-idor.guard';
 
 @Module({
-  imports: [DatabaseModule, ConfigModule, HealthModule, AuthModule, UsersModule, OrganizationsModule, DepartmentsModule, ProcessesModule, StandardsModule, DocumentsModule, AuditsModule, NonconformitiesModule, RisksModule, DashboardModule, AuditLogsModule, SecurityEventsModule, FileAssetsModule],
+  imports: [DatabaseModule, ConfigModule, HealthModule, AuthModule, UsersModule, OrganizationsModule, DepartmentsModule, ProcessesModule, StandardsModule, DocumentsModule, AuditsModule, NonconformitiesModule, RisksModule, DashboardModule, AuditLogsModule, SecurityEventsModule, FileAssetsModule, NotificationsModule],
   providers: [
     {
       provide: APP_GUARD,

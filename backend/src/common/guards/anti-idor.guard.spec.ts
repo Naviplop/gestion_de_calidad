@@ -46,23 +46,23 @@ describe('AntiIdorGuard', () => {
 
   describe('user ownership', () => {
     it('should allow access when user belongs to actor organization', async () => {
-      mockPrismaService.user.findFirst.mockResolvedValue({ organizationId: 'org-1' } as { organizationId: string });
+      mockPrismaService.user.findFirst.mockResolvedValue({ organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' } as { organizationId: string });
 
       const metadata = { resourceType: 'user' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-1' }, { id: 'user-2' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7147' });
       const result = await guard.canActivate(context);
       expect(result).toBe(true);
       expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
-        where: { id: 'user-2' },
+        where: { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7147' },
         select: { organizationId: true },
       });
     });
 
     it('should deny access when user belongs to different organization', async () => {
-      mockPrismaService.user.findFirst.mockResolvedValue({ organizationId: 'org-b' } as { organizationId: string });
+      mockPrismaService.user.findFirst.mockResolvedValue({ organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be9' } as { organizationId: string });
 
       const metadata = { resourceType: 'user' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-a' }, { id: 'user-2' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7147' });
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
 
@@ -70,30 +70,30 @@ describe('AntiIdorGuard', () => {
       mockPrismaService.user.findFirst.mockResolvedValue(null);
 
       const metadata = { resourceType: 'user' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-a' }, { id: 'user-2' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7147' });
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('role ownership', () => {
     it('should allow access when role belongs to actor organization', async () => {
-      mockPrismaService.role.findFirst.mockResolvedValue({ organizationId: 'org-1' } as { organizationId: string });
+      mockPrismaService.role.findFirst.mockResolvedValue({ organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' } as { organizationId: string });
 
       const metadata = { resourceType: 'role' as const, resourceIdParam: 'roleId' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-1' }, { roleId: 'role-1' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { roleId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7148' });
       const result = await guard.canActivate(context);
       expect(result).toBe(true);
       expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith({
-        where: { id: 'role-1' },
+        where: { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7148' },
         select: { organizationId: true },
       });
     });
 
     it('should deny access when role belongs to different organization', async () => {
-      mockPrismaService.role.findFirst.mockResolvedValue({ organizationId: 'org-b' } as { organizationId: string });
+      mockPrismaService.role.findFirst.mockResolvedValue({ organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be9' } as { organizationId: string });
 
       const metadata = { resourceType: 'role' as const, resourceIdParam: 'roleId' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-a' }, { roleId: 'role-1' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { roleId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7148' });
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
   });
@@ -101,14 +101,14 @@ describe('AntiIdorGuard', () => {
   describe('organization ownership', () => {
     it('should allow access when resource matches actor organization', async () => {
       const metadata = { resourceType: 'organization' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-1' }, { id: 'org-1' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { id: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' });
       const result = await guard.canActivate(context);
       expect(result).toBe(true);
     });
 
     it('should deny access when resource does not match actor organization', async () => {
       const metadata = { resourceType: 'organization' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-a' }, { id: 'org-b' });
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, { id: '86fe4fab-31df-4722-ab3f-ac6ac63d6be9' });
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
   });
@@ -116,13 +116,13 @@ describe('AntiIdorGuard', () => {
   describe('missing context', () => {
     it('should deny access when organizationContext is missing', async () => {
       const metadata = { resourceType: 'user' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, {}, { id: 'user-1' });
+      const context = createMockContext(metadata, {}, { id: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146' });
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
 
     it('should deny access when resourceId is missing', async () => {
       const metadata = { resourceType: 'user' as const, resourceIdParam: 'id' };
-      const context = createMockContext(metadata, { userId: 'user-1', organizationId: 'org-1' }, {});
+      const context = createMockContext(metadata, { userId: '6a93f5f0-1d07-42cd-a3e7-d700df1e7146', organizationId: '86fe4fab-31df-4722-ab3f-ac6ac63d6be8' }, {});
       await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
   });

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req, ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
@@ -92,13 +92,13 @@ export class NonconformitiesController {
 
   @Get(':nonconformityId/root-cause')
   @RequirePermission('nonconformities:read')
-  getRootCause(@Param('nonconformityId') nonconformityId: string, @Req() req: AuthenticatedRequest) {
+  getRootCause(@Param('nonconformityId', ParseUUIDPipe) nonconformityId: string, @Req() req: AuthenticatedRequest) {
     return this.nonconformitiesService.getRootCauseAnalysis(req.organizationId, nonconformityId);
   }
 
   @Post(':nonconformityId/root-cause')
   @RequirePermission('nonconformities:update')
-  createRootCause(@Param('nonconformityId') nonconformityId: string, @Body() dto: CreateRootCauseAnalysisDto, @Req() req: AuthenticatedRequest) {
+  createRootCause(@Param('nonconformityId', ParseUUIDPipe) nonconformityId: string, @Body() dto: CreateRootCauseAnalysisDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.nonconformitiesService.createRootCauseAnalysis(req.organizationId, nonconformityId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
@@ -115,7 +115,7 @@ export class NonconformitiesController {
   @Get(':nonconformityId/corrective-actions')
   @RequirePermission('nonconformities:read')
   listCorrectiveActions(
-    @Param('nonconformityId') nonconformityId: string,
+    @Param('nonconformityId', ParseUUIDPipe) nonconformityId: string,
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -134,7 +134,7 @@ export class NonconformitiesController {
 
   @Post(':nonconformityId/corrective-actions')
   @RequirePermission('nonconformities:createActions')
-  createCorrectiveAction(@Param('nonconformityId') nonconformityId: string, @Body() dto: CreateCorrectiveActionDto, @Req() req: AuthenticatedRequest) {
+  createCorrectiveAction(@Param('nonconformityId', ParseUUIDPipe) nonconformityId: string, @Body() dto: CreateCorrectiveActionDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.nonconformitiesService.createCorrectiveAction(req.organizationId, nonconformityId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }

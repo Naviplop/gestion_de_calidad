@@ -1,12 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessesService } from './services/processes.service';
 import { ProcessRepository } from './repositories/process.repository';
+import { PrismaService } from '../../database/prisma.service';
+import { CreateProcessDto } from './dto/create-process.dto';
 import { Process } from './entities/process.entity';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 
 describe('ProcessesService', () => {
   let service: ProcessesService;
   let processRepository: jest.Mocked<ProcessRepository>;
+  let prisma: jest.Mocked<PrismaService>;
 
   const mockProcessRepository = {
     findById: jest.fn(),
@@ -18,16 +21,28 @@ describe('ProcessesService', () => {
     deactivate: jest.fn(),
   };
 
+  const mockPrisma = {
+    process: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      findMany: jest.fn(),
+    },
+    $transaction: jest.fn(),
+    $executeRaw: jest.fn(),
+  } as unknown as jest.Mocked<PrismaService>;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProcessesService,
         { provide: ProcessRepository, useValue: mockProcessRepository },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
     service = module.get(ProcessesService);
     processRepository = module.get(ProcessRepository);
+    prisma = module.get(PrismaService);
   });
 
   afterEach(() => {
@@ -84,10 +99,10 @@ describe('ProcessesService', () => {
     });
   });
 
-  describe('createProcess', () => {
+  describe('createProcess with manual code', () => {
     it('should create process when code is unique', async () => {
-      processRepository.findDuplicate.mockResolvedValue(null);
-      processRepository.create.mockResolvedValue({
+      mockPrisma.process.findFirst.mockResolvedValue(null);
+      mockPrisma.process.create.mockResolvedValue({
         id: 'proc-1',
         organizationId: 'org-1',
         areaId: null,
@@ -104,19 +119,13 @@ describe('ProcessesService', () => {
 
       const result = await service.createProcess('org-1', { code: 'PROC-001', name: 'Sales' });
       expect(result).toBeDefined();
-      expect(processRepository.create).toHaveBeenCalledWith('org-1', {
-        code: 'PROC-001',
-        name: 'Sales',
-        description: undefined,
-        areaId: undefined,
-        parentProcessId: undefined,
-        ownerId: undefined,
-        processType: undefined,
-      });
+      expect(mockPrisma.process.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ code: 'PROC-001' }) }),
+      );
     });
 
     it('should throw ConflictException when duplicate code exists', async () => {
-      processRepository.findDuplicate.mockResolvedValue({
+      mockPrisma.process.findFirst.mockResolvedValue({
         id: 'proc-existing',
         organizationId: 'org-1',
         areaId: null,
@@ -135,10 +144,65 @@ describe('ProcessesService', () => {
     });
 
     it('should throw BadRequestException when parentProcessId does not exist in tenant', async () => {
-      processRepository.findDuplicate.mockResolvedValue(null);
-      processRepository.findById.mockResolvedValue(null);
+      mockPrisma.process.findFirst.mockResolvedValue(null);
 
       await expect(service.createProcess('org-1', { code: 'PROC-002', name: 'Sub Process', parentProcessId: 'proc-parent' })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createProcess with auto code', () => {
+    it('should auto-generate PR-001 when no processes exist', async () => {
+      mockPrisma.process.findMany.mockResolvedValue([]);
+      mockPrisma.process.create.mockResolvedValue({
+        id: 'proc-1',
+        organizationId: 'org-1',
+        areaId: null,
+        parentProcessId: null,
+        code: 'PR-001',
+        name: 'Gestión de Calidad',
+        description: null,
+        ownerId: null,
+        processType: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Process);
+      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => fn(prisma));
+
+      const result = await service.createProcess('org-1', { name: 'Gestión de Calidad' });
+      expect(result.code).toBe('PR-001');
+    });
+
+    it('should auto-generate PR-002 when one process exists', async () => {
+      mockPrisma.process.findMany.mockResolvedValue([{ code: 'PR-001' }]);
+      mockPrisma.process.create.mockResolvedValue({
+        id: 'proc-2',
+        organizationId: 'org-1',
+        areaId: null,
+        parentProcessId: null,
+        code: 'PR-002',
+        name: 'Test',
+        description: null,
+        ownerId: null,
+        processType: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Process);
+      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => fn(prisma));
+
+      const result = await service.createProcess('org-1', { name: 'Test' });
+      expect(result.code).toBe('PR-002');
+    });
+
+    it('should reject duplicate code with manual code', async () => {
+      mockPrisma.process.findFirst.mockResolvedValue({ id: 'proc-1', code: 'PR-001' });
+
+      const dto = new CreateProcessDto();
+      dto.code = 'PR-001';
+      dto.name = 'Duplicate';
+
+      await expect(service.createProcess('org-1', dto)).rejects.toThrow(ConflictException);
     });
   });
 

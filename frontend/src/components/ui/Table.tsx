@@ -4,6 +4,7 @@ interface Column<T> {
   render?: (item: T) => React.ReactNode;
   width?: string;
   align?: 'left' | 'right' | 'center';
+  sortable?: boolean;
 }
 
 interface TableProps<T> {
@@ -14,6 +15,7 @@ interface TableProps<T> {
   onRowClick?: (item: T) => void;
   rowKey?: (item: T) => string;
   className?: string;
+  onSort?: (field: string) => void;
 }
 
 const alignMap = {
@@ -22,7 +24,7 @@ const alignMap = {
   center: 'text-center',
 };
 
-export function Table<T>({ columns, data, loading, emptyState, onRowClick, rowKey, className = '' }: TableProps<T>) {
+export function Table<T>({ columns, data, loading, emptyState, onRowClick, rowKey, className = '', onSort }: TableProps<T>) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -46,9 +48,13 @@ export function Table<T>({ columns, data, loading, emptyState, onRowClick, rowKe
                   key={column.key}
                   scope="col"
                   style={{ width: column.width }}
-                  className={`px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 ${alignMap[column.align || 'left']}`}
+                  className={`px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 ${alignMap[column.align || 'left']} ${column.sortable ? 'cursor-pointer hover:text-slate-700 select-none' : ''}`}
+                  onClick={column.sortable ? () => onSort?.(column.key) : undefined}
                 >
                   {column.header}
+                  {column.sortable ? (
+                    <span className="ml-1 text-[10px]">↕</span>
+                  ) : null}
                 </th>
               ))}
             </tr>

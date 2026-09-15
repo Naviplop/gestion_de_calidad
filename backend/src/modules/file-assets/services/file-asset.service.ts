@@ -13,7 +13,7 @@ export interface FileAssetMetadata {
   id: string;
   originalFilename: string;
   mimeType: string;
-  sizeBytes: bigint;
+  sizeBytes: string;
   sha256Hash: string;
   storageProvider: StorageProvider;
   objectKey: string;
@@ -174,7 +174,7 @@ export class FileAssetService {
         id: existingAsset.id,
         originalFilename: existingAsset.originalFilename,
         mimeType: existingAsset.mimeType,
-        sizeBytes: existingAsset.fileSizeBytes,
+        sizeBytes: existingAsset.fileSizeBytes.toString(),
         sha256Hash: existingAsset.sha256Hash,
         storageProvider: existingAsset.storageProvider,
         objectKey: existingAsset.objectKey,
@@ -243,7 +243,7 @@ export class FileAssetService {
         id: fileAsset.id,
         originalFilename: fileAsset.originalFilename,
         mimeType: fileAsset.mimeType,
-        sizeBytes: fileAsset.fileSizeBytes,
+        sizeBytes: fileAsset.fileSizeBytes.toString(),
         sha256Hash: fileAsset.sha256Hash,
         storageProvider: fileAsset.storageProvider,
         objectKey: fileAsset.objectKey,
@@ -282,7 +282,7 @@ export class FileAssetService {
       id: fileAsset.id,
       originalFilename: fileAsset.originalFilename,
       mimeType: fileAsset.mimeType,
-      sizeBytes: fileAsset.fileSizeBytes,
+      sizeBytes: fileAsset.fileSizeBytes.toString(),
       sha256Hash: fileAsset.sha256Hash,
       storageProvider: fileAsset.storageProvider,
       objectKey: fileAsset.objectKey,
@@ -313,21 +313,17 @@ export class FileAssetService {
       throw new BadRequestException('UnsupportedStorageProvider');
     }
 
-    const storagePath: StoragePath = {
-      organizationId,
-      documentId: 'unknown',
-      documentVersionId: 'unknown',
-      fileAssetId: fileAsset.id,
-      filename: fileAsset.originalFilename,
-    };
+    if (!fileAsset.objectKey) {
+      throw new NotFoundException('FileAssetObjectKeyMissing');
+    }
 
-    const stream = await adapter.read(storagePath);
+    const stream = await adapter.readByObjectKey(fileAsset.objectKey);
 
     const metadata: FileAssetMetadata = {
       id: fileAsset.id,
       originalFilename: fileAsset.originalFilename,
       mimeType: fileAsset.mimeType,
-      sizeBytes: fileAsset.fileSizeBytes,
+      sizeBytes: fileAsset.fileSizeBytes.toString(),
       sha256Hash: fileAsset.sha256Hash,
       storageProvider: fileAsset.storageProvider,
       objectKey: fileAsset.objectKey,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApiClient } from '../lib/auth/auth.service';
-import type { Nonconformity, CorrectiveAction, RootCauseAnalysis } from '../lib/auth/auth.service';
+import type { Nonconformity, CorrectiveAction, RootCauseAnalysis, UserListItem } from '../lib/auth/auth.service';
 import { useToast } from '../components/Toast';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Button } from '../components/ui/Button';
@@ -34,6 +34,7 @@ export function NonconformitiesPage() {
   const [rootCause, setRootCause] = useState<RootCauseAnalysis | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{ action: string; ncId: string } | null>(null);
+  const [users, setUsers] = useState<Array<{ id: string; label: string }>>([]);
   const { showToast } = useToast();
 
   const loadNonconformities = useCallback(async () => {
@@ -59,6 +60,18 @@ export function NonconformitiesPage() {
   useEffect(() => {
     loadNonconformities();
   }, [loadNonconformities]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await authApiClient.listUsers({ page: 1, pageSize: 100, isActive: true });
+        setUsers(res.data.map((u: UserListItem) => ({ id: u.id, label: `${u.firstName} ${u.lastName}` })));
+      } catch {
+        // ignore
+      }
+    };
+    loadUsers();
+  }, []);
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
@@ -319,7 +332,14 @@ export function NonconformitiesPage() {
                   { value: 'CRITICAL', label: 'Crítica' },
                 ]}
               />
-              <Input label="ID responsable" name="responsibleId" />
+              <Select
+                label="Responsable"
+                name="responsibleId"
+                defaultValue=""
+                placeholder="Selecciona una persona"
+                options={[{ value: '', label: 'Selecciona una persona' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona que tendrá responsabilidad operativa sobre esta no conformidad"
+              />
             </div>
           </form>
         </Modal>

@@ -13,7 +13,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('summary')
-  @RequirePermission('documents:read')
+  @RequirePermission('dashboard:read')
   getSummary(@Req() req: AuthenticatedRequest) {
     return this.dashboardService.getSummary(req.organizationId);
   }

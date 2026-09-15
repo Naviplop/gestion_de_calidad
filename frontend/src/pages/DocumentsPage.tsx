@@ -15,6 +15,7 @@ import { Pagination } from '../components/ui/Pagination';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatusPill, STATUSES } from '../components/ui/StatusPill';
 import { Icon } from '../components/ui/Icon';
+import { FilePreviewModal } from '../components/FilePreviewModal';
 
 type Tab = 'details' | 'versions' | 'reviews' | 'approvals' | 'distributions' | 'acknowledgements';
 
@@ -93,6 +94,9 @@ export function DocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('code');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [detailTab, setDetailTab] = useState<Tab>('details');
@@ -104,10 +108,16 @@ export function DocumentsPage() {
   const [pendingAction, setPendingAction] = useState<{ action: string; documentId: string } | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingVersionId, setUploadingVersionId] = useState<string | null>(null);
+  const [showFilePreview, setShowFilePreview] = useState(false);
+  const [previewFileAsset, setPreviewFileAsset] = useState<FileAssetMetadata | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileAssets, setFileAssets] = useState<Record<string, FileAssetMetadata>>({});
+  const [users, setUsers] = useState<Array<{ id: string; label: string }>>([]);
+  const [departments, setDepartments] = useState<Array<{ id: string; label: string }>>([]);
+  const [documentTypes, setDocumentTypes] = useState<Array<{ id: string; label: string }>>([]);
+  const [processes, setProcesses] = useState<Array<{ id: string; name: string }>>([]);
   const { showToast } = useToast();
 
   const loadDocuments = useCallback(async () => {
@@ -119,6 +129,9 @@ export function DocumentsPage() {
         pageSize: meta.pageSize,
         search: search || undefined,
         status: statusFilter || undefined,
+        documentTypeId: typeFilter || undefined,
+        sortBy,
+        sortOrder,
       });
       setDocuments(response.data);
       setMeta(response.meta);
@@ -127,11 +140,35 @@ export function DocumentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [meta.page, meta.pageSize, search, statusFilter]);
+  }, [meta.page, meta.pageSize, search, statusFilter, typeFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [sortBy, sortOrder, loadDocuments]);
+
+  useEffect(() => {
+    const loadLookups = async () => {
+      try {
+        const [usersRes, deptsRes, typesRes, procsRes] = await Promise.all([
+          authApiClient.listUsers({ page: 1, pageSize: 100, isActive: true }),
+          authApiClient.listDepartments({ page: 1, pageSize: 100 }),
+          authApiClient.listDocumentTypes(),
+          authApiClient.listProcesses({ page: 1, pageSize: 100 }),
+        ]);
+        setUsers(usersRes.data.map((u) => ({ id: u.id, label: `${u.firstName} ${u.lastName}` })));
+        setDepartments(deptsRes.data.map((d) => ({ id: d.id, label: d.name })));
+        setDocumentTypes(typesRes.data.map((t) => ({ id: t.id, label: t.name })));
+        setProcesses(procsRes.data.map((p) => ({ id: p.id, name: p.name })));
+      } catch {
+        // ignore
+      }
+    };
+    loadLookups();
+  }, []);
 
   const handleSearch = () => {
     setMeta((prev) => ({ ...prev, page: 1 }));
@@ -140,6 +177,21 @@ export function DocumentsPage() {
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
+    setMeta((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleTypeFilter = (value: string) => {
+    setTypeFilter(value);
+    setMeta((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleSortBy = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder((prev) => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
     setMeta((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -300,6 +352,11 @@ export function DocumentsPage() {
     }
   };
 
+  const openFilePreview = (fileAsset: FileAssetMetadata) => {
+    setPreviewFileAsset(fileAsset);
+    setShowFilePreview(true);
+  };
+
   const openDetail = async (documentId: string) => {
     try {
       const response = await authApiClient.getDocument(documentId);
@@ -369,6 +426,16 @@ export function DocumentsPage() {
               ]}
             />
           </div>
+          <div className="w-full sm:w-56">
+            <Select
+              value={typeFilter}
+              onChange={(e) => handleTypeFilter(e.target.value)}
+              options={[
+                { value: '', label: 'Todos los tipos' },
+                ...documentTypes.map((t) => ({ value: t.id, label: t.label })),
+              ]}
+            />
+          </div>
           <Button variant="secondary" onClick={handleSearch} leftIcon="search">Buscar</Button>
         </div>
 
@@ -392,16 +459,25 @@ export function DocumentsPage() {
                   key: 'code',
                   header: 'Código',
                   width: '140px',
+                  sortable: true,
                   render: (doc) => <span className="font-mono text-sm font-semibold text-slate-900">{doc.code}</span>,
                 },
                 {
                   key: 'title',
                   header: 'Título',
+                  sortable: true,
                   render: (doc) => (
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900">{doc.title}</p>
-                      <p className="truncate text-xs text-slate-500">{doc.documentType?.name || 'Sin tipo'}</p>
                     </div>
+                  ),
+                },
+                {
+                  key: 'type',
+                  header: 'Tipo',
+                  width: '140px',
+                  render: (doc) => (
+                    <span className="text-xs text-slate-600">{doc.documentType?.name || 'Sin tipo'}</span>
                   ),
                 },
                 {
@@ -447,6 +523,7 @@ export function DocumentsPage() {
               ]}
               data={documents}
               onRowClick={(doc) => openDetail(doc.id)}
+              onSort={handleSortBy}
             />
             <Pagination
               page={meta.page}
@@ -482,8 +559,16 @@ export function DocumentsPage() {
           )}
           <form id="create-document-form" onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="Código" name="code" required maxLength={100} />
-              <Input label="ID de tipo de documento" name="documentTypeId" required />
+              <Input label="Código" name="code" required maxLength={100} helperText="Identificador único del documento" />
+              <Select
+                label="Tipo de documento"
+                name="documentTypeId"
+                required
+                defaultValue=""
+                placeholder="Selecciona un tipo"
+                options={[{ value: '', label: 'Selecciona un tipo' }, ...documentTypes.map((t) => ({ value: t.id, label: t.label }))]}
+                helperText="Tipo de documento (Procedimiento, Política, Instructivo, etc.)"
+              />
             </div>
             <Input label="Título" name="title" required maxLength={300} />
             <div>
@@ -496,8 +581,42 @@ export function DocumentsPage() {
               />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="ID de propietario" name="ownerId" required />
-              <Input label="ID de responsable" name="responsibleId" required />
+              <Select
+                label="Propietario"
+                name="ownerId"
+                required
+                defaultValue=""
+                placeholder="Selecciona un usuario"
+                options={[{ value: '', label: 'Selecciona un usuario' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona responsable del documento"
+              />
+              <Select
+                label="Responsable"
+                name="responsibleId"
+                required
+                defaultValue=""
+                placeholder="Selecciona un usuario"
+                options={[{ value: '', label: 'Selecciona un usuario' }, ...users.map((u) => ({ value: u.id, label: u.label }))]}
+                helperText="Persona que revisa y aprueba el documento"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select
+                label="Proceso"
+                name="processId"
+                defaultValue=""
+                placeholder="Selecciona un proceso"
+                options={[{ value: '', label: 'Selecciona un proceso' }, ...(processes || []).map((p) => ({ value: p.id, label: p.name }))]}
+                helperText="Proceso al que pertenece el documento"
+              />
+              <Select
+                label="Departamento"
+                name="departmentId"
+                defaultValue=""
+                placeholder="Sin departamento"
+                options={[{ value: '', label: 'Sin departamento' }, ...departments.map((d) => ({ value: d.id, label: d.label }))]}
+                helperText="Área organizacional asociada"
+              />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Select
@@ -626,6 +745,9 @@ export function DocumentsPage() {
                           return fileAsset ? (
                             <div className="flex items-center gap-2">
                               <span className="truncate text-sm text-slate-700">{fileAsset.originalFilename}</span>
+                              <Button variant="ghost" size="sm" onClick={() => openFilePreview(fileAsset)}>
+                                Previsualizar
+                              </Button>
                               <Button variant="ghost" size="sm" onClick={() => handleDownload(fileAsset.id, fileAsset.originalFilename)}>
                                 Descargar
                               </Button>
@@ -729,6 +851,15 @@ export function DocumentsPage() {
             )}
           </div>
         </Modal>
+      )}
+
+      {showFilePreview && previewFileAsset && (
+        <FilePreviewModal
+          open={showFilePreview}
+          onClose={() => { setShowFilePreview(false); setPreviewFileAsset(null); }}
+          fileAsset={previewFileAsset}
+          fileName={previewFileAsset.originalFilename}
+        />
       )}
     </>
   );

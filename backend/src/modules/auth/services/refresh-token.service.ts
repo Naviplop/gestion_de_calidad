@@ -68,12 +68,33 @@ export class RefreshTokenService {
       return null;
     }
 
+    const newRawToken = this.generateSecureToken();
+    const newTokenHash = this.hashToken(newRawToken);
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refreshToken.update({
+        where: { id: existingToken.id },
+        data: { revokedAt: new Date() },
+      });
+      await tx.refreshToken.create({
+        data: {
+          userId: existingToken.userId,
+          organizationId: existingToken.organizationId,
+          tokenHash: newTokenHash,
+          expiresAt: newExpiresAt,
+          userAgent: existingToken.userAgent,
+          ipAddress: existingToken.ipAddress,
+        },
+      });
+    });
+
     return {
-      tokenHash: existingToken.tokenHash,
+      tokenHash: newTokenHash,
       userId: existingToken.userId,
       organizationId: existingToken.organizationId,
-      expiresAt: existingToken.expiresAt,
-      rawToken,
+      expiresAt: newExpiresAt,
+      rawToken: newRawToken,
     };
   }
 

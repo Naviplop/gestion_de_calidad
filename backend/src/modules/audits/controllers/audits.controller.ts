@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req, ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
@@ -159,13 +159,13 @@ export class AuditChecklistsController {
 
   @Get()
   @RequirePermission('audits:read')
-  list(@Param('auditId') auditId: string, @Req() req: AuthenticatedRequest) {
+  list(@Param('auditId', ParseUUIDPipe) auditId: string, @Req() req: AuthenticatedRequest) {
     return this.auditsService.listChecklists(req.organizationId, auditId);
   }
 
   @Post()
   @RequirePermission('audits:update')
-  create(@Param('auditId') auditId: string, @Body() dto: CreateAuditChecklistDto, @Req() req: AuthenticatedRequest) {
+  create(@Param('auditId', ParseUUIDPipe) auditId: string, @Body() dto: CreateAuditChecklistDto, @Req() req: AuthenticatedRequest) {
     return this.auditsService.createChecklist(req.organizationId, auditId, req.userId, dto);
   }
 }
@@ -205,7 +205,7 @@ export class AuditFindingsController {
   @Get()
   @RequirePermission('audits:read')
   list(
-    @Param('auditId') auditId: string,
+    @Param('auditId', ParseUUIDPipe) auditId: string,
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -228,7 +228,7 @@ export class AuditFindingsController {
 
   @Post()
   @RequirePermission('audits:createFindings')
-  create(@Param('auditId') auditId: string, @Body() dto: CreateAuditFindingDto, @Req() req: AuthenticatedRequest) {
+  create(@Param('auditId', ParseUUIDPipe) auditId: string, @Body() dto: CreateAuditFindingDto, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     return this.auditsService.createFinding(req.organizationId, auditId, req.userId, dto, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }

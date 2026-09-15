@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Req, HttpCode } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermission } from '../../auth/decorators/auth.decorators';
 import { RequireResourceOwnership } from '../../../common/guards/anti-idor.guard';
@@ -80,67 +80,74 @@ export class DocumentsController {
     return this.documentsService.updateDocument(req.organizationId, id, req.userId, dto, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
-   @Post(':id/submit')
-   @RequirePermission('documents:submit')
-   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
-   submit(@Param('id') id: string, @Body() body: { changeReason?: string }, @Req() req: AuthenticatedRequest) {
-     const ctx = getRequestContext(req);
-     const ifMatch = req.headers['if-match'] as string | undefined;
-     return this.documentsService.submitDocument(req.organizationId, id, req.userId, body.changeReason, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
-   }
+  @Post(':id/submit')
+  @RequirePermission('documents:submit')
+  @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
+  submit(@Param('id') id: string, @Body() body: { changeReason?: string }, @Req() req: AuthenticatedRequest) {
+    const ctx = getRequestContext(req);
+    const ifMatch = req.headers['if-match'] as string | undefined;
+    this.documentsService.submitDocument(req.organizationId, id, req.userId, body.changeReason, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+  }
 
-   @Post(':id/submit-for-approval')
-   @RequirePermission('documents:approve')
-   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
-   submitForApproval(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-     const ctx = getRequestContext(req);
-     const ifMatch = req.headers['if-match'] as string | undefined;
-     return this.documentsService.submitForApprovalDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
-   }
+  @Post(':id/submit-for-approval')
+  @RequirePermission('documents:approve')
+  @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
+  submitForApproval(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const ctx = getRequestContext(req);
+    const ifMatch = req.headers['if-match'] as string | undefined;
+    this.documentsService.submitForApprovalDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+  }
 
   @Post(':id/approve')
   @RequirePermission('documents:approve')
   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
   approve(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.approveDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    this.documentsService.approveDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
   @Post(':id/reject')
   @RequirePermission('documents:approve')
   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
   reject(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.rejectDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    this.documentsService.rejectDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
   @Post(':id/publish')
   @RequirePermission('documents:publish')
   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
   publish(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.publishDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    this.documentsService.publishDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
   @Post(':id/obsolete')
   @RequirePermission('documents:obsolete')
   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
   obsolete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.obsoleteDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    this.documentsService.obsoleteDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
   @Post(':id/cancel')
   @RequirePermission('documents:cancel')
   @RequireResourceOwnership({ resourceType: 'document', resourceIdParam: 'id' })
+  @HttpCode(204)
   cancel(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const ctx = getRequestContext(req);
     const ifMatch = req.headers['if-match'] as string | undefined;
-    return this.documentsService.cancelDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
+    this.documentsService.cancelDocument(req.organizationId, id, req.userId, ifMatch, ctx.ipAddress, ctx.userAgent, ctx.correlationId);
   }
 
   @Post(':id/versions')
@@ -161,29 +168,33 @@ export class DocumentsController {
   @Post('versions/:versionId/submit-for-review')
   @RequirePermission('documents:submit')
   @RequireResourceOwnership({ resourceType: 'documentVersion', resourceIdParam: 'versionId' })
+  @HttpCode(204)
   submitForReview(@Param('versionId') versionId: string, @Req() req: AuthenticatedRequest) {
-    return this.documentsService.submitVersionForReview(req.organizationId, versionId);
+    this.documentsService.submitVersionForReview(req.organizationId, versionId);
   }
 
   @Post('versions/:versionId/approve')
   @RequirePermission('documents:approve')
   @RequireResourceOwnership({ resourceType: 'documentVersion', resourceIdParam: 'versionId' })
+  @HttpCode(204)
   approveVersion(@Param('versionId') versionId: string, @Req() req: AuthenticatedRequest) {
-    return this.documentsService.approveVersion(req.organizationId, versionId, req.userId);
+    this.documentsService.approveVersion(req.organizationId, versionId, req.userId);
   }
 
   @Post('versions/:versionId/reject')
   @RequirePermission('documents:approve')
   @RequireResourceOwnership({ resourceType: 'documentVersion', resourceIdParam: 'versionId' })
+  @HttpCode(204)
   rejectVersion(@Param('versionId') versionId: string, @Req() req: AuthenticatedRequest) {
-    return this.documentsService.rejectVersion(req.organizationId, versionId);
+    this.documentsService.rejectVersion(req.organizationId, versionId);
   }
 
   @Post('versions/:versionId/publish')
   @RequirePermission('documents:publish')
   @RequireResourceOwnership({ resourceType: 'documentVersion', resourceIdParam: 'versionId' })
+  @HttpCode(204)
   publishVersion(@Param('versionId') versionId: string, @Req() req: AuthenticatedRequest) {
-    return this.documentsService.publishVersion(req.organizationId, versionId, '');
+    this.documentsService.publishVersion(req.organizationId, versionId, '');
   }
 
   @Get('versions/:versionId')

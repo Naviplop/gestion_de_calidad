@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from './Icon';
 import { Avatar } from './Avatar';
+import { NotificationBell } from './NotificationBell';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth();
@@ -59,14 +60,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          className="hidden rounded-md p-2 text-slate-500 qms-transition hover:bg-slate-100 hover:text-slate-700 sm:inline-flex"
-          aria-label="Notificaciones"
-          title="Notificaciones"
-        >
-          <Icon name="bell" className="h-5 w-5" />
-        </button>
+        <NotificationBell />
 
         <div className="relative" ref={menuRef}>
           <button
